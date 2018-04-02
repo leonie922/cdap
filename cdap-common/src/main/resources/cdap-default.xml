@@ -2346,6 +2346,14 @@
     <final>true</final>
   </property>
 
+  <property>
+    <name>app.program.runtime.handler.bind.port</name>
+    <value>11020</value>
+    <description>
+      CDAP Runtime Handler service bind port
+    </description>
+  </property>
+
   <!-- Notification System Configuration -->
 
   <property>
