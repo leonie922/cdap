@@ -19,14 +19,15 @@
 
 .profile-preview {
   width: inherit;
-  text-align: left;
   padding: 20px;
 
   .profile-descripion {
     margin-bottom: 20px;
     font-size: 12px;
     color: $grey-04;
+
     @include multi-line-ellipsis($max-height: 3.5rem);
+
     .multi-line-text {
       // This will prevent the last line to have any gaps between the text and the ellipsis
       // FIXME: There should be a better way to do this.

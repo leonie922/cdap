@@ -57,13 +57,13 @@ export default class ProfilePreview extends Component {
   render() {
     if (this.state.loading) {
       return (
-        <div className="profile-preview">
+        <div className="profile-preview text-xs-center">
           <LoadingSVG />
         </div>
       );
     }
     return (
-      <div className="profile-preview">
+      <div className="profile-preview text-xs-left">
         <strong>{this.props.profileName}</strong>
         <div className="profile-descripion">
           <p className="multi-line-text">
