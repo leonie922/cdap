@@ -12,15 +12,36 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
  * the License.
- */
+*/
 
-import DataSourceConfigurer from 'services/datasource/DataSourceConfigurer';
-import {apiCreator} from 'services/resource-helper';
-let dataSrc = DataSourceConfigurer.getInstance();
+@import "../../../../styles/variables.scss";
 
-var basepath = '/namespaces/:namespace';
-export const MyProfileApi = {
-  list: apiCreator(dataSrc, 'GET', 'REQUEST', `${basepath}/profiles`),
-  create: apiCreator(dataSrc, 'PUT', 'REQUEST', `${basepath}/profiles/:profile`),
-  get: apiCreator(dataSrc, 'GET', 'REQUEST', `${basepath}/profiles/:profile`)
-};
+.run-level-compute-profile {
+  &.run-info-container {
+    &:after {
+      display: none;
+    }
+    .profile-preview-label {
+      cursor: pointer;
+      color: $blue-03;
+      user-select: none;
+      .btn.btn-link[disabled] {
+        padding: 0;
+        color: inherit;
+        width: 100%;
+        &:hover {
+          color: inherit;
+        }
+      }
+      .icon-svg {
+        margin-right: 5px;
+        vertical-align: top;
+      }
+    }
+    .profile-preview-popover {
+      .popper {
+        width: 500px;
+      }
+    }
+  }
+}
