@@ -19,6 +19,8 @@ import PropTypes from 'prop-types';
 import {MyProfileApi} from 'api/cloud';
 import {getCurrentNamespace} from 'services/NamespaceStore';
 import LoadingSVG from 'components/LoadingSVG';
+import IconSVG from 'components/IconSVG';
+require('./Preview.scss');
 
 export default class ProfilePreview extends Component {
   static propTypes = {
@@ -63,7 +65,42 @@ export default class ProfilePreview extends Component {
     return (
       <div className="profile-preview">
         <strong>{this.props.profileName}</strong>
-        {JSON.stringify(this.state.profileDetails, null, 2)}
+        <div className="profile-descripion">
+          <p className="multi-line-text">
+            {this.state.profileDetails.description}
+          </p>
+        </div>
+        <div className="grid grid-container">
+          <div className="grid-header">
+            <div className="grid-item">
+              <div>Provider</div>
+              <div>Scope</div>
+              <div>Last 24hr # runs</div>
+              <div>Last 24hr node hr</div>
+              <div>Creation Date</div>
+            </div>
+          </div>
+          <div className="grid-body">
+            <div className="grid-item">
+              <div>
+                <IconSVG name="icon-cloud" />
+                <span className="provisioner-name truncate-text">
+                  {this.state.profileDetails.provisioner.name}
+                </span>
+              </div>
+              <div className="truncate-text">
+                {this.state.profileDetails.scope}
+              </div>
+              <div />
+              <div />
+              <div />
+            </div>
+          </div>
+        </div>
+        <hr />
+        <a href="#">
+          View Details
+        </a>
       </div>
     );
   }
