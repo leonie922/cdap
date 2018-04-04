@@ -38,7 +38,6 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,8 +55,7 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
     () -> LogSamplers.limitRate(60000)));
 
   private static final Gson GSON = new Gson();
-  private static final Type MAP_STRING_STRING_TYPE = new TypeToken<Map<String, String>>() { }.getType();
-  private static final Type MAP_STRING_MESSAGE_TYPE = new TypeToken<Map<String, List<MonitorMessage>>>() { }.getType();
+  private static final Type LIST_MESSAGE_TYPE = new TypeToken<List<TopicMessage>>() { }.getType();
 
   private final RESTClient restClient;
   private final ClientConfig clientConfig;
@@ -93,19 +91,9 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
     Set<String> topicsToMonitor = new HashSet<>();
     topicsToMonitor.addAll(Arrays.asList(cConf.get(Constants.RuntimeMonitor.TOPICS).split(",")));
 
-    HttpResponse response = restClient.execute(HttpMethod.POST, clientConfig.resolveURL("runtime/monitor/topics"),
-                                               GSON.toJson(topicsToMonitor), Collections.emptyMap(), null);
-
-    if (response.getResponseCode() == HttpURLConnection.HTTP_UNAVAILABLE) {
-      throw new ServiceUnavailableException(response.getResponseBodyAsString());
-    }
-
-    Map<String, String> configToTopic = GSON.fromJson(response.getResponseBodyAsString(StandardCharsets.UTF_8),
-                                                      MAP_STRING_STRING_TYPE);
-
     // TODO initialize from offset table for a given programId
-    for (Map.Entry<String, String> entry : configToTopic.entrySet()) {
-      topicsToRequest.put(entry.getKey(), new MonitorConsumeRequest(entry.getValue(), entry.getKey(), null, limit));
+    for (String topicConfig : topicsToMonitor) {
+      topicsToRequest.put(topicConfig, new MonitorConsumeRequest(null, limit));
     }
   }
 
@@ -128,8 +116,8 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
             throw new ServiceUnavailableException(response.getResponseBodyAsString());
           }
 
-          Map<String, List<MonitorMessage>> monitorResponses =
-            GSON.fromJson(response.getResponseBodyAsString(StandardCharsets.UTF_8), MAP_STRING_MESSAGE_TYPE);
+          List<TopicMessage> monitorResponses =
+            GSON.fromJson(response.getResponseBodyAsString(StandardCharsets.UTF_8), LIST_MESSAGE_TYPE);
 
           processResponse(monitorResponses);
         } catch (Exception e) {
@@ -143,14 +131,14 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
     }
   }
 
-  private void processResponse(Map<String, List<MonitorMessage>> monitorResponses) throws Exception {
-    for (Map.Entry<String, MonitorConsumeRequest> request : topicsToRequest.entrySet()) {
-      publish(request.getKey(), request.getValue(), monitorResponses.get(request.getValue().getTopic()));
+  private void processResponse(List<TopicMessage> monitorResponses) throws Exception {
+    for (TopicMessage topicMessage : monitorResponses) {
+      publish(topicMessage.getTopic(), topicsToRequest.get(topicMessage.getTopic()), topicMessage.getMessages());
     }
   }
 
-  private void publish(String topicConfig, MonitorConsumeRequest request,
-                       List<MonitorMessage> messages) throws Exception {
+  private void publish(String topicConfig, MonitorConsumeRequest request, List<MonitorMessage> messages)
+    throws Exception {
     if (messages.isEmpty()) {
       return;
     }
@@ -159,8 +147,7 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
     messagePublisher.publish(NamespaceId.SYSTEM.getNamespace(), cConf.get(topicConfig),
                              messages.stream().map(s -> s.getMessage().getBytes(StandardCharsets.UTF_8)).iterator());
 
-    topicsToRequest.put(topicConfig, new MonitorConsumeRequest(request.getTopic(), topicConfig,
-                                                               messages.get(messages.size() - 1).getMessageId(),
+    topicsToRequest.put(topicConfig, new MonitorConsumeRequest(messages.get(messages.size() - 1).getMessageId(),
                                                                limit));
   }
 

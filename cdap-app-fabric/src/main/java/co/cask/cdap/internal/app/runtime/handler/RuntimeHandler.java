@@ -47,10 +47,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.annotation.Nullable;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -64,7 +62,6 @@ public class RuntimeHandler extends AbstractHttpHandler {
   private static final Gson GSON = new Gson();
   private static final int MAX_MESSAGES_PER_READ = 100;
   private static final int CHUNK_SIZE = 8192;
-  private static final Type TOKEN_TYPE_SET_STRING = new TypeToken<Set<String>>() { }.getType();
   private static final Type MAP_STRING_CONSUME_REQUEST_TYPE = new TypeToken<Map<String,
     MonitorConsumeRequest>>() { }.getType();
 
@@ -77,27 +74,7 @@ public class RuntimeHandler extends AbstractHttpHandler {
   }
 
   /**
-   * Gets list of topics to be monitored from client and responds with actual corresponding names using which runtime
-   * has been initialized.
-   */
-  @POST
-  @Path("/monitor/topics")
-  public void topics(FullHttpRequest request, HttpResponder responder) throws Exception {
-    String data = request.content().toString(StandardCharsets.UTF_8);
-
-    Set<String> topics = GSON.fromJson(data, TOKEN_TYPE_SET_STRING);
-    Map<String, String> returnMap = new HashMap<>();
-
-    for (String topic : topics) {
-      returnMap.put(topic, cConf.get(topic));
-    }
-
-    responder.sendJson(HttpResponseStatus.OK, GSON.toJson(returnMap));
-  }
-
-  /**
-   * Gets topics along with offsets and limit in the request and returns all the messages excluding the last message
-   * read.
+   * Gets list of topics along with offsets and limit as request and returns list of messages
    */
   @POST
   @Path("/metadata")
@@ -113,7 +90,6 @@ public class RuntimeHandler extends AbstractHttpHandler {
     ByteBuf buffer = Unpooled.buffer();
     JsonWriter jsonWriter = new JsonWriter(new OutputStreamWriter(new ByteBufOutputStream(buffer),
                                                                   StandardCharsets.UTF_8));
-    jsonWriter.name("messages");
     jsonWriter.beginArray();
 
     for (Map.Entry<String, MonitorConsumeRequest> entry : topicsToFetch.entrySet()) {

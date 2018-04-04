@@ -23,32 +23,19 @@ import javax.annotation.Nullable;
  * Runtime Monitor consume request
  */
 public class MonitorConsumeRequest {
-  private final String topic;
-  private final String topicConfig;
   @Nullable
   private final String messageId;
   private final boolean inclusive;
   private final int limit;
 
-  public MonitorConsumeRequest(String topic, String topicConfig, @Nullable String messageId,
-                               boolean inclusive, int limit) {
-    this.topic = topic;
-    this.topicConfig = topicConfig;
+  public MonitorConsumeRequest(@Nullable String messageId, boolean inclusive, int limit) {
     this.messageId = messageId;
     this.limit = limit;
     this.inclusive = inclusive;
   }
 
-  public MonitorConsumeRequest(String topic, String topicConfig, @Nullable String messageId, int limit) {
-    this(topic, topicConfig, messageId, false, limit);
-  }
-
-  public String getTopic() {
-    return topic;
-  }
-
-  public String getTopicConfig() {
-    return topicConfig;
+  public MonitorConsumeRequest(@Nullable String messageId, int limit) {
+    this(messageId, false, limit);
   }
 
   @Nullable
@@ -73,26 +60,13 @@ public class MonitorConsumeRequest {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
+    MonitorConsumeRequest that = (MonitorConsumeRequest) o;
 
-    MonitorConsumeRequest request = (MonitorConsumeRequest) o;
-
-    return inclusive == request.inclusive && limit == request.limit && Objects.equals(topic, request.topic) &&
-      Objects.equals(topicConfig, request.topicConfig) && Objects.equals(messageId, request.messageId);
+    return inclusive == that.inclusive && limit == that.limit && Objects.equals(messageId, that.messageId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(topic, topicConfig, messageId, inclusive, limit);
-  }
-
-  @Override
-  public String toString() {
-    return "MonitorConsumeRequest{" +
-      "topic='" + topic + '\'' +
-      ", topicConfig='" + topicConfig + '\'' +
-      ", messageId='" + messageId + '\'' +
-      ", inclusive=" + inclusive +
-      ", limit=" + limit +
-      '}';
+    return Objects.hash(messageId, inclusive, limit);
   }
 }
