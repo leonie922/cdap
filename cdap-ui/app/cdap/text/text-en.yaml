@@ -184,6 +184,9 @@ features:
       streams: Streams
       transaction: Transaction
       viewlogs: View Logs
+    Tabs:
+      config: Configuration
+      management: Management
     Top:
       primaryLabelOne: DAY
       primaryLabelTwo: HR
@@ -196,6 +199,7 @@ features:
         singular: second ago
       version-label: Version
     Title: Administration
+    TitleWithCDAP: CDAP | Administration
     uptimeLabel: Uptime {time}
   AppDetailedView:
     History:
