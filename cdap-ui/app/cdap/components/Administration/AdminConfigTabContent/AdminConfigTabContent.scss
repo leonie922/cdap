@@ -15,32 +15,18 @@
  */
 
 @import '../../../styles/variables.scss';
-$grey-theme-color: $grey-08;
+$btn-color: $blue-03;
 
-.admin-management-tab-content {
-  .services-details {
-    display: flex;
-    width: 100%;
-    background: $grey-theme-color;
-    padding: 10px;
-
-    > div {
-      width: calc(50% - 20px);
-      margin: 10px;
-    }
-    .services-table-section {
-      strong {
-        font-size: 18px;
-        display: block;
-      }
-    }
+.admin-config-tab-content {
+  .btn.btn-secondary {
+    color: $btn-color;
   }
 
-  .admin-bottom-panel {
-    display: flex;
-    padding: 0 10px;
-    background: $grey-theme-color;
-    padding-bottom: 40px;
-    justify-content: flex-end;
+  .action-buttons {
+    margin: 10px 0;
+
+    .btn:first-child {
+      margin-right: 15px;
+    }
   }
 }

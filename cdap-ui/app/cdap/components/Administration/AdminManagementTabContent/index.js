@@ -18,15 +18,15 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import AdminOverviewPane from 'components/AdminOverviewPane';
 import T from 'i18n-react';
-import PlatformsDetails from 'components/Administration/PlatformsDetails';
-import ServicesTable from 'components/Administration/ServicesTable';
+import PlatformsDetails from 'components/Administration/AdminManagementTabContent/PlatformsDetails';
+import ServicesTable from 'components/Administration/AdminManagementTabContent/ServicesTable';
 
 const PREFIX = 'features.Administration';
 require('./AdminManagementTabContent.scss');
 
 export default function AdminManagementTabContent(props) {
   return (
-    <div>
+    <div className="admin-management-tab-content">
       <div className="services-details">
         <div className="services-table-section">
           <strong> {T.translate(`${PREFIX}.Services.title`)} </strong>

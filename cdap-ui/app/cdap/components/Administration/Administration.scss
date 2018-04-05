@@ -35,6 +35,7 @@ $uptime_version_color: gray;
     display: flex;
     justify-content: space-between;
     align-items: center;
+
     .tab-title {
       h5 {
         display: inline;
@@ -45,6 +46,11 @@ $uptime_version_color: gray;
           text-decoration: underline;
           cursor: initial;
         }
+      }
+
+      .divider {
+        font-size: 1.25rem;
+        padding: 0 5px;
       }
     }
     .uptime-version-container {

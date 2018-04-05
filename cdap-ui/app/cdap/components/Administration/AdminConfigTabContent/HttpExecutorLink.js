@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017 Cask Data, Inc.
+ * Copyright © 2017-2018 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -12,28 +12,19 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
  * the License.
-*/
+ */
 
-$title_border_color: #cccccc;
+import React from 'react';
+import {Link} from 'react-router-dom';
+import T from 'i18n-react';
 
-.generic-details {
-  display: flex;
-  flex-wrap: wrap;
-  font-size: 15px;
-
-  > div {
-    width: 50%;
-    margin: 0;
-    margin-bottom: 10px;
-
-    strong {
-      display: inline-block;
-      border-bottom: 2px solid $title_border_color;
-      width: 90%;
-      padding-bottom: 5px;
-    }
-    table {
-      width: 80%;
-    }
-  }
+export default function HttpExecutorLink() {
+  return (
+    <Link
+      to="/httpexecutor"
+      className="btn btn-secondary"
+    >
+      {T.translate(`features.Administration.Configure.buttons.MakeRESTCalls.label`)}
+    </Link>
+  );
 }

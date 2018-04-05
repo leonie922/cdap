@@ -24,6 +24,7 @@ import {humanReadableDuration, humanReadableNumber, HUMANREADABLESTORAGE} from '
 import isNil from 'lodash/isNil';
 import classnames from 'classnames';
 import AdminManagementTabContent from 'components/Administration/AdminManagementTabContent';
+import AdminConfigTabContent from 'components/Administration/AdminConfigTabContent';
 import T from 'i18n-react';
 
 require('./Administration.scss');
@@ -246,7 +247,7 @@ class Administration extends Component {
               loading={this.state.loading}
             />
           :
-            null
+            <AdminConfigTabContent />
         }
       </div>
     );
