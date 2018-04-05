@@ -54,7 +54,7 @@
     word-break: break-word;
 
     &:before {
-      content: '...';
+      content: "\2026\0020";
       position: absolute;
       right: 0;
       bottom: 0;
