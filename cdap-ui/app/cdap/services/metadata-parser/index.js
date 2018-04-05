@@ -17,6 +17,8 @@
 import EntityIconMap from 'services/entity-icon-map';
 import intersection from 'lodash/intersection';
 import EntityType from 'services/metadata-parser/EntityType';
+import {GLOBALS} from 'services/global-constants';
+import {objectQuery} from 'services/helpers';
 
 export function parseMetadata(entity) {
   let type = entity.entityId.entity;
@@ -55,6 +57,14 @@ export function getType(entity) {
   }
 }
 
+export function entityIsApp(entity) {
+  return objectQuery(entity, 'entityId', 'entity') === EntityType.application;
+}
+
+export function entityIsPipeline(entity) {
+  return intersection(GLOBALS.etlPipelineTypes, objectQuery(entity, 'metadata', 'SYSTEM', 'tags')).length > 0;
+}
+
 function createArtifactObj(entity) {
   return {
     id: entity.entityId.artifact,
@@ -67,11 +77,6 @@ function createArtifactObj(entity) {
 }
 
 function createApplicationObj(entity) {
-  const pipelineArtifacts = [
-    'cdap-data-pipeline',
-    'cdap-data-streams'
-  ];
-
   let version = entity.entityId.version;
   if (version === '-SNAPSHOT') {
     version = '1.0.0-SNAPSHOT';
@@ -90,7 +95,7 @@ function createApplicationObj(entity) {
     metadata: entity,
     version,
     icon,
-    isHydrator: intersection(entity.metadata.SYSTEM.tags, pipelineArtifacts).length > 0
+    isHydrator: entityIsPipeline(entity)
   };
 }
 

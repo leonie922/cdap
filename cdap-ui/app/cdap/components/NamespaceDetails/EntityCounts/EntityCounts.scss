@@ -20,10 +20,9 @@
   height: 70px;
   display: flex;
   align-items: center;
+  justify-content: space-around;
 
   .entity-count {
-    width: 25%;
-    display: inline-block;
     text-align: center;
 
     > span {

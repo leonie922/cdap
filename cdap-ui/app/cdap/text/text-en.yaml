@@ -1329,7 +1329,6 @@ features:
     entityCounts:
       customApps: Custom Apps
       datasets: Datasets
-      streams: Streams
     mapping:
       hbaseNamespaceName: 'HBase Namespace Name: '
       hdfsRootDirectory: 'HDFS Root Directory: '
