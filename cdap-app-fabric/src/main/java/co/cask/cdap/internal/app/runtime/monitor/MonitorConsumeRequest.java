@@ -25,26 +25,16 @@ import javax.annotation.Nullable;
 public class MonitorConsumeRequest {
   @Nullable
   private final String messageId;
-  private final boolean inclusive;
   private final int limit;
 
-  public MonitorConsumeRequest(@Nullable String messageId, boolean inclusive, int limit) {
+  public MonitorConsumeRequest(@Nullable String messageId, int limit) {
     this.messageId = messageId;
     this.limit = limit;
-    this.inclusive = inclusive;
-  }
-
-  public MonitorConsumeRequest(@Nullable String messageId, int limit) {
-    this(messageId, false, limit);
   }
 
   @Nullable
   public String getMessageId() {
     return messageId;
-  }
-
-  public boolean isInclusive() {
-    return inclusive;
   }
 
   public int getLimit() {
@@ -62,11 +52,11 @@ public class MonitorConsumeRequest {
     }
     MonitorConsumeRequest that = (MonitorConsumeRequest) o;
 
-    return inclusive == that.inclusive && limit == that.limit && Objects.equals(messageId, that.messageId);
+    return limit == that.limit && Objects.equals(messageId, that.messageId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId, inclusive, limit);
+    return Objects.hash(messageId, limit);
   }
 }

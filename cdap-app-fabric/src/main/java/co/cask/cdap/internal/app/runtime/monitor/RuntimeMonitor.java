@@ -55,7 +55,7 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
     () -> LogSamplers.limitRate(60000)));
 
   private static final Gson GSON = new Gson();
-  private static final Type LIST_MESSAGE_TYPE = new TypeToken<List<TopicMessage>>() { }.getType();
+  private static final Type MAP_STRING_MESSAGE_TYPE = new TypeToken<Map<String, List<MonitorMessage>>>() { }.getType();
 
   private final RESTClient restClient;
   private final ClientConfig clientConfig;
@@ -88,11 +88,11 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
   }
 
   private void initializeTopics() throws Exception {
-    Set<String> topicsToMonitor = new HashSet<>();
-    topicsToMonitor.addAll(Arrays.asList(cConf.get(Constants.RuntimeMonitor.TOPICS).split(",")));
+    Set<String> topicsConfigsToMonitor = new HashSet<>();
+    topicsConfigsToMonitor.addAll(Arrays.asList(cConf.get(Constants.RuntimeMonitor.TOPICS_CONFIGS).split(",")));
 
     // TODO initialize from offset table for a given programId
-    for (String topicConfig : topicsToMonitor) {
+    for (String topicConfig : topicsConfigsToMonitor) {
       topicsToRequest.put(topicConfig, new MonitorConsumeRequest(null, limit));
     }
   }
@@ -108,8 +108,6 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
             initializeTopics();
           }
 
-
-
           HttpResponse response = restClient
             .execute(HttpRequest.builder(HttpMethod.POST, clientConfig.resolveURL("runtime/metadata"))
                        .withBody(GSON.toJson(topicsToRequest)).build());
@@ -118,8 +116,8 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
             throw new ServiceUnavailableException(response.getResponseBodyAsString());
           }
 
-          List<TopicMessage> monitorResponses =
-            GSON.fromJson(response.getResponseBodyAsString(StandardCharsets.UTF_8), LIST_MESSAGE_TYPE);
+          Map<String, List<MonitorMessage>> monitorResponses =
+            GSON.fromJson(response.getResponseBodyAsString(StandardCharsets.UTF_8), MAP_STRING_MESSAGE_TYPE);
 
           processResponse(monitorResponses);
         } catch (Exception e) {
@@ -133,13 +131,13 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
     }
   }
 
-  private void processResponse(List<TopicMessage> monitorResponses) throws Exception {
-    for (TopicMessage topicMessage : monitorResponses) {
-      publish(topicMessage.getTopic(), topicsToRequest.get(topicMessage.getTopic()), topicMessage.getMessages());
+  private void processResponse(Map<String, List<MonitorMessage>> monitorResponses) throws Exception {
+    for (Map.Entry<String, List<MonitorMessage>> monitorResponse : monitorResponses.entrySet()) {
+      publish(monitorResponse.getKey(), monitorResponse.getValue());
     }
   }
 
-  private void publish(String topicConfig, MonitorConsumeRequest request, List<MonitorMessage> messages)
+  private void publish(String topicConfig, List<MonitorMessage> messages)
     throws Exception {
     if (messages.isEmpty()) {
       return;

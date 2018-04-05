@@ -53,12 +53,13 @@ import javax.ws.rs.Path;
 /**
  * {@link co.cask.http.HttpHandler} for exposing metadata of a runtime.
  */
-@Path("v1/runtime")
+@Path("/v1/runtime")
 public class RuntimeHandler extends AbstractHttpHandler {
   private static final Logger LOG = LoggerFactory.getLogger(RuntimeHandler.class);
   private static final Gson GSON = new Gson();
   private static final Type MAP_STRING_CONSUME_REQUEST_TYPE = new TypeToken<Map<String,
     MonitorConsumeRequest>>() { }.getType();
+  private static final int CHUNK_SIZE = 8192;
 
   private final CConfiguration cConf;
   private final MessageFetcher messageFetcher;
@@ -115,7 +116,7 @@ public class RuntimeHandler extends AbstractHttpHandler {
         Message message = iter.next();
         GSON.toJson(new MonitorMessage(message.getId(), message.getPayloadAsString(StandardCharsets.UTF_8)),
                     MonitorMessage.class, jsonWriter);
-        if (buffer.isReadable()) {
+        if (buffer.readableBytes() >= CHUNK_SIZE) {
           chunkResponder.sendChunk(buffer.copy());
           buffer.clear();
         }

@@ -794,7 +794,7 @@ public final class Constants {
   public static final class RuntimeMonitor {
     public static final String POLL_TIME_MS = "app.program.runtime.monitor.polltime.ms";
     public static final String BATCH_LIMIT = "app.program.runtime.monitor.batch.limit";
-    public static final String TOPICS = "app.program.runtime.monitor.topics";
+    public static final String TOPICS_CONFIGS = "app.program.runtime.monitor.topics.configs";
   }
 
   /**

@@ -2338,10 +2338,10 @@
   </property>
 
   <property>
-    <name>app.program.runtime.monitor.topics</name>
+    <name>app.program.runtime.monitor.topics.configs</name>
     <value>${program.status.record.event.topic}</value>
     <description>
-      A comma-separated list of topic configs to be monitored by runtime monitor.
+      A comma-separated list of topics config to be monitored by runtime monitor.
     </description>
     <final>true</final>
   </property>
