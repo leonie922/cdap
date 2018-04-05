@@ -108,6 +108,8 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
             initializeTopics();
           }
 
+
+
           HttpResponse response = restClient
             .execute(HttpRequest.builder(HttpMethod.POST, clientConfig.resolveURL("runtime/metadata"))
                        .withBody(GSON.toJson(topicsToRequest)).build());

@@ -23,12 +23,10 @@ import co.cask.cdap.api.messaging.TopicNotFoundException;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.internal.app.runtime.monitor.MonitorConsumeRequest;
 import co.cask.cdap.internal.app.runtime.monitor.MonitorMessage;
-import co.cask.cdap.internal.app.runtime.monitor.TopicMessage;
 import co.cask.cdap.proto.id.NamespaceId;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.ChunkResponder;
 import co.cask.http.HttpResponder;
-import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -47,7 +45,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.ws.rs.POST;
@@ -60,8 +57,6 @@ import javax.ws.rs.Path;
 public class RuntimeHandler extends AbstractHttpHandler {
   private static final Logger LOG = LoggerFactory.getLogger(RuntimeHandler.class);
   private static final Gson GSON = new Gson();
-  private static final int MAX_MESSAGES_PER_READ = 100;
-  private static final int CHUNK_SIZE = 8192;
   private static final Type MAP_STRING_CONSUME_REQUEST_TYPE = new TypeToken<Map<String,
     MonitorConsumeRequest>>() { }.getType();
 
@@ -79,9 +74,9 @@ public class RuntimeHandler extends AbstractHttpHandler {
   @POST
   @Path("/metadata")
   public void metadata(FullHttpRequest request, HttpResponder responder) throws Exception {
-    String data = request.content().toString(StandardCharsets.UTF_8);
+    String requestBody = request.content().toString(StandardCharsets.UTF_8);
 
-    Map<String, MonitorConsumeRequest> topicsToFetch = GSON.fromJson(data, MAP_STRING_CONSUME_REQUEST_TYPE);
+    Map<String, MonitorConsumeRequest> consumeRequests = GSON.fromJson(requestBody, MAP_STRING_CONSUME_REQUEST_TYPE);
 
     ChunkResponder chunkResponder = responder.sendChunkStart(
       HttpResponseStatus.OK, new DefaultHttpHeaders().set(HttpHeaderNames.CONTENT_TYPE,
@@ -90,60 +85,41 @@ public class RuntimeHandler extends AbstractHttpHandler {
     ByteBuf buffer = Unpooled.buffer();
     JsonWriter jsonWriter = new JsonWriter(new OutputStreamWriter(new ByteBufOutputStream(buffer),
                                                                   StandardCharsets.UTF_8));
-    jsonWriter.beginArray();
+    jsonWriter.beginObject();
 
-    for (Map.Entry<String, MonitorConsumeRequest> entry : topicsToFetch.entrySet()) {
-      String lastMessageId = null;
-      int limit = entry.getValue().getLimit();
-      int batchSize = Math.min(MAX_MESSAGES_PER_READ, limit);
-      List<MonitorMessage> messages = Lists.newArrayListWithCapacity(MAX_MESSAGES_PER_READ);
+    for (Map.Entry<String, MonitorConsumeRequest> entry : consumeRequests.entrySet()) {
+      jsonWriter.name(entry.getKey());
+      jsonWriter.beginArray();
 
-      // read first batch of messages
-      int eventsRead = readMessages(messages, cConf.get(entry.getKey()), batchSize, lastMessageId);
+      writeMessages(jsonWriter, buffer, chunkResponder, cConf.get(entry.getKey()), entry.getValue().getLimit(),
+                    entry.getValue().getMessageId());
 
-      while (limit > 0 && eventsRead > 0) {
-        GSON.toJson(new TopicMessage(entry.getKey(), messages), TopicMessage.class, jsonWriter);
-        jsonWriter.flush();
-
-        if (buffer.readableBytes() >= CHUNK_SIZE) {
-          chunkResponder.sendChunk(buffer.copy());
-          buffer.clear();
-        }
-
-        limit -= eventsRead;
-        batchSize = Math.min(MAX_MESSAGES_PER_READ, limit);
-
-        if (limit > 0) {
-          lastMessageId = messages.get(eventsRead - 1).getMessageId();
-          messages.clear();
-          eventsRead = readMessages(messages, cConf.get(entry.getKey()), batchSize, lastMessageId);
-        }
-      }
-
-      if (buffer.isReadable()) {
-        chunkResponder.sendChunk(buffer.copy());
-        buffer.clear();
-      }
+      jsonWriter.endArray();
     }
 
-    jsonWriter.endArray();
+    jsonWriter.endObject();
     jsonWriter.close();
+
+    if (buffer.isReadable()) {
+      chunkResponder.sendChunk(buffer.copy());
+    }
 
     Closeables.closeQuietly(chunkResponder);
   }
 
-  private int readMessages(List<MonitorMessage> messages, String topic, int limit, @Nullable String fromMessage)
-    throws TopicNotFoundException, IOException {
-    int count = 0;
+  private void writeMessages(JsonWriter jsonWriter, ByteBuf buffer, ChunkResponder chunkResponder, String topic,
+                             int limit, @Nullable String fromMessage) throws TopicNotFoundException, IOException {
     try (CloseableIterator<Message> iter = messageFetcher.fetch(NamespaceId.SYSTEM.getNamespace(), topic, limit,
                                                                 fromMessage)) {
       while (iter.hasNext()) {
         Message message = iter.next();
-        messages.add(new MonitorMessage(message.getId(), message.getPayloadAsString(StandardCharsets.UTF_8)));
-        count++;
+        GSON.toJson(new MonitorMessage(message.getId(), message.getPayloadAsString(StandardCharsets.UTF_8)),
+                    MonitorMessage.class, jsonWriter);
+        if (buffer.isReadable()) {
+          chunkResponder.sendChunk(buffer.copy());
+          buffer.clear();
+        }
       }
     }
-
-    return count;
   }
 }
