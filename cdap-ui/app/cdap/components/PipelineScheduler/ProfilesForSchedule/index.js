@@ -16,8 +16,6 @@
 
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {MyPipelineApi} from 'api/pipeline';
-import PipelineDetailStore from 'components/PipelineDetails/store';
 import {getCurrentNamespace} from 'services/NamespaceStore';
 import {MyProfileApi} from 'api/cloud';
 import {UncontrolledDropdown} from 'components/UncontrolledComponents';
@@ -50,26 +48,9 @@ class ProfilesForSchedule extends Component {
     }
   }
 
-  getScheduleDetails = () => {
-    let {name: appId} = PipelineDetailStore.getState();
-    // TODO: Should this be hardcoded? Should UI fetch schedules for the pipeline and look for the 
-    // correct TIME based schedule?
-    let scheduleId = 'dataPipelineSchedule';
-    MyPipelineApi
-      .getSchedule({
-        namespace: getCurrentNamespace(),
-        appId,
-        scheduleId
-      })
-      .subscribe(
-        (schedule) => {
-          console.log(schedule);
-          this.setState({
-            scheduleDetails: schedule
-          });
-        }
-      );
-  };
+  componentDidMount() {
+    this.getProfiles();
+  }
 
   getProfiles = () => {
     MyProfileApi.list({
@@ -159,10 +140,6 @@ class ProfilesForSchedule extends Component {
     );
   };
 
-  componentDidMount() {
-    this.getScheduleDetails();
-    this.getProfiles();
-  }
   render() {
     return (
       <div className="form-group row">

@@ -17,7 +17,16 @@
 import moment from 'moment';
 import {isNumeric} from 'services/helpers';
 import {wholeArrayIsNumeric} from 'services/helpers';
-import PipelineSchedulerStore, {INTERVAL_OPTIONS, SCHEDULE_VIEWS, DEFAULT_SCHEDULE_OPTIONS, ACTIONS as PipelineSchedulerActions} from 'components/PipelineScheduler/Store';
+import PipelineSchedulerStore, {
+  INTERVAL_OPTIONS,
+  SCHEDULE_VIEWS,
+  DEFAULT_SCHEDULE_OPTIONS,
+  ACTIONS as PipelineSchedulerActions
+} from 'components/PipelineScheduler/Store';
+import {getCurrentNamespace} from 'services/NamespaceStore';
+import PipelineDetailStore from 'components/PipelineDetails/store';
+import {MyPipelineApi} from 'api/pipeline';
+import {GLOBALS} from 'services/global-constants';
 
 function setStateFromCron(cron = PipelineSchedulerStore.getState().cron) {
   let cronValues = cron.split(' ');
@@ -171,9 +180,35 @@ function setSelectedProfile(selectedProfile) {
   });
 }
 
+function getTimeBasedSchedule() {
+  let {name: appId} = PipelineDetailStore.getState();
+  let scheduleId = GLOBALS.defaultScheduleId;
+  MyPipelineApi
+    .getSchedule({
+      namespace: getCurrentNamespace(),
+      appId,
+      scheduleId
+    })
+    .subscribe(
+      (currentBackendSchedule) => {
+        PipelineSchedulerStore.dispatch({
+          type: PipelineSchedulerActions.SET_CURRENT_BACKEND_SCHEDULE,
+          payload: {
+            currentBackendSchedule
+          }
+        });
+        setStateFromCron();
+      },
+      (err) => {
+        console.log('Failed to fetch dataPipelineSchedule Schedule from backend: ', err);
+      }
+    );
+}
+
 export {
   setStateFromCron,
   setSelectedProfile,
+  getTimeBasedSchedule,
   getCronFromState,
   updateCron
 };

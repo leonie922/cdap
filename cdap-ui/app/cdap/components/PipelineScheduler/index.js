@@ -17,20 +17,22 @@
 import React, { Component } from 'react';
 import {Provider} from 'react-redux';
 import PropTypes from 'prop-types';
-import {MyPipelineApi} from 'api/pipeline';
 import PipelineDetailStore from 'components/PipelineDetails/store';
 import PipelineSchedulerStore, {ACTIONS as PipelineSchedulerActions} from 'components/PipelineScheduler/Store';
-import {setStateFromCron} from 'components/PipelineScheduler/Store/ActionCreator';
+import {getTimeBasedSchedule} from 'components/PipelineScheduler/Store/ActionCreator';
 import ViewSwitch from 'components/PipelineScheduler/ViewSwitch';
 import ViewContainer from 'components/PipelineScheduler/ViewContainer';
 import {setSchedule, setMaxConcurrentRuns, setOptionalProperty} from 'components/PipelineDetails/store/ActionCreator';
 import IconSVG from 'components/IconSVG';
 import {getCurrentNamespace} from 'services/NamespaceStore';
 import StatusMapper from 'services/StatusMapper';
-import {isDescendant} from 'services/helpers';
+import {isDescendant, objectQuery} from 'services/helpers';
 import {Observable} from 'rxjs/Observable';
 import {PROFILES_DROPDOWN_DOM_CLASS} from 'components/PipelineScheduler/ProfilesForSchedule';
+import {MyPipelineApi} from 'api/pipeline';
 import T from 'i18n-react';
+import {PROFILE_NAME_PREFERENCE_PROPERTY} from 'components/PipelineConfigurations/ConfigurationsContent/ComputeTabContent/ProfilesListView';
+import {GLOBALS} from 'services/global-constants';
 
 const PREFIX = 'features.PipelineScheduler';
 
@@ -39,8 +41,6 @@ require('./PipelineScheduler.scss');
 export default class PipelineScheduler extends Component {
   constructor(props) {
     super(props);
-
-    setStateFromCron(this.props.schedule);
     PipelineSchedulerStore.dispatch({
       type: PipelineSchedulerActions.SET_MAX_CONCURRENT_RUNS,
       payload: {
@@ -59,11 +59,23 @@ export default class PipelineScheduler extends Component {
       let state = PipelineSchedulerStore.getState();
       let currentCron = state.cron;
       let curretMaxConcurrentRuns = state.maxConcurrentRuns;
-      if ((currentCron !== this.props.schedule || curretMaxConcurrentRuns !== this.props.maxConcurrentRuns) && !this.state.isScheduleChanged) {
+      let currentProfileName = state.profiles.selectedProfile;
+      let currentBackendSchedule = state.currentBackendSchedule || {};
+      let constraintFromBackend = (currentBackendSchedule.constraints || []).find(constraint => {
+        return constraint.type === 'CONCURRENCY';
+      }) || {};
+      let profileNameFromBackend = objectQuery(
+        state, 'currentBackendSchedule', 'properties', PROFILE_NAME_PREFERENCE_PROPERTY
+      ) || null;
+      if (
+        currentCron !== objectQuery(currentBackendSchedule, 'trigger', 'cronExpression') ||
+        curretMaxConcurrentRuns !== constraintFromBackend.maxConcurrency ||
+        currentProfileName !== profileNameFromBackend
+      ) {
         this.setState({
           isScheduleChanged: true
         });
-      } else if (currentCron === this.props.schedule && curretMaxConcurrentRuns === this.props.maxConcurrentRuns && this.state.isScheduleChanged) {
+      } else {
         this.setState({
           isScheduleChanged: false
         });
@@ -75,6 +87,8 @@ export default class PipelineScheduler extends Component {
     if (!this.props.isDetailView) {
       return;
     }
+
+    getTimeBasedSchedule();
 
     this.documentClick$ = Observable.fromEvent(document, 'click')
     .subscribe((e) => {
@@ -135,7 +149,12 @@ export default class PipelineScheduler extends Component {
   };
 
   saveSchedule = (shouldSchedule = false) => {
-    let {cron, maxConcurrentRuns} = PipelineSchedulerStore.getState();
+    let {
+      cron,
+      maxConcurrentRuns,
+      currentBackendSchedule,
+      profiles
+    } = PipelineSchedulerStore.getState();
 
     // In Studio mode, which is still using Angular action creator
     if (!this.props.isDetailView) {
@@ -151,37 +170,59 @@ export default class PipelineScheduler extends Component {
       [savingState]: true
     });
 
-    let {name, description, artifact, config, principal} = PipelineDetailStore.getState();
-    config = {
-      ...config,
-      schedule: cron,
-      maxConcurrentRuns,
-    };
-    MyPipelineApi.publish({
-      namespace: getCurrentNamespace(),
-      appId: name
-    }, {
-      name,
-      description,
-      artifact,
-      config,
-      principal,
-      'app.deploy.update.schedules': true
-    })
-    .subscribe(() => {
-      this.setState({
-        [savingState]: false
-      });
-      this.props.onClose();
-      if (shouldSchedule) {
-        this.props.schedulePipeline();
+    let scheduleProperties = currentBackendSchedule.properties;
+    let newConstraints = currentBackendSchedule.constraints.map(constraint => {
+      if (constraint.type === 'CONCURRENCY') {
+        return {
+          ...constraint,
+          maxConcurrency: maxConcurrentRuns
+        };
       }
-    }, (err) => {
-      console.log(err);
-      this.setState({
-        [savingState]: false
-      });
+      return constraint;
     });
+    if (profiles.selectedProfile) {
+      scheduleProperties = {
+        ...scheduleProperties,
+        'system.profile.name': profiles.selectedProfile
+      };
+    }
+    let newTrigger = {
+      ...currentBackendSchedule.trigger,
+      cronExpression: cron
+    };
+    let newSchedule = {
+      ...currentBackendSchedule,
+      properties: scheduleProperties,
+      constraints: newConstraints,
+      trigger: newTrigger
+    };
+    let {name: appId} = PipelineDetailStore.getState();
+
+    MyPipelineApi
+      .updateSchedule({
+        namespace: getCurrentNamespace(),
+        appId,
+        scheduleId: GLOBALS.defaultScheduleId
+      }, newSchedule)
+      .subscribe(
+        () => {
+          // Once saved if the schedule
+          if (shouldSchedule) {
+            this.schedulePipeline();
+          } else {
+            this.setState({
+              [savingState]: false
+            });
+            this.props.onClose();
+          }
+        },
+        err => {
+          console.log('Failed to update schedule', err);
+          this.setState({
+            [savingState]: false
+          });
+        }
+      );
 
     setSchedule(cron);
     setMaxConcurrentRuns(maxConcurrentRuns);
