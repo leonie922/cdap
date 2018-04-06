@@ -17,7 +17,8 @@
 import React, {Component} from 'react';
 import ReloadSystemArtifacts from 'components/Administration/AdminConfigTabContent/ReloadSystemArtifacts';
 import HttpExecutorLink from 'components/Administration/AdminConfigTabContent/HttpExecutorLink';
-import NamespaceAccordion from 'components/Administration/AdminConfigTabContent/NamespaceAccordion';
+import NamespacesAccordion from 'components/Administration/AdminConfigTabContent/NamespacesAccordion';
+import SystemProfilesAccordion from 'components/Administration/AdminConfigTabContent/SystemProfilesAccordion';
 import LoadingSVGCentered from 'components/LoadingSVGCentered';
 import {MyNamespaceApi} from 'api/namespace';
 import {MyPreferenceApi} from 'api/preference';
@@ -26,13 +27,32 @@ import {Observable} from 'rxjs/Observable';
 
 require('./AdminConfigTabContent.scss');
 
+export const ADMIN_CONFIG_ACCORDIONS = {
+  namespaces: 'NAMESPACES',
+  systemProfiles: 'SYSTEM_PROFILES',
+  systemPrefs: 'SYSTEM_PREFS'
+};
+
 export default class AdminConfigTabContent extends Component {
   state = {
     namespaces: 0,
     systemProfiles: 0,
     systemPrefs: 0,
-    loading: true
+    loading: true,
+    expandedAccordion: null
   };
+
+  expandAccordion = (accordion) => {
+    if (this.state.expandedAccordion === accordion) {
+      this.setState({
+        expandedAccordion: null
+      });
+    } else {
+      this.setState({
+        expandedAccordion: accordion
+      });
+    }
+  }
 
   componentWillMount() {
     Observable
@@ -65,8 +85,15 @@ export default class AdminConfigTabContent extends Component {
           <ReloadSystemArtifacts />
           <HttpExecutorLink />
         </div>
-        <NamespaceAccordion
+        <NamespacesAccordion
           namespaces={this.state.namespaces}
+          expanded={this.state.expandedAccordion === ADMIN_CONFIG_ACCORDIONS.namespaces}
+          onExpand={this.expandAccordion.bind(this, ADMIN_CONFIG_ACCORDIONS.namespaces)}
+        />
+        <SystemProfilesAccordion
+          profiles={this.state.systemProfiles}
+          expanded={this.state.expandedAccordion === ADMIN_CONFIG_ACCORDIONS.systemProfiles}
+          onExpand={this.expandAccordion.bind(this, ADMIN_CONFIG_ACCORDIONS.systemProfiles)}
         />
       </div>
     );

@@ -15,6 +15,7 @@
 */
 
 import React, {Component} from 'react';
+import PropTypes from 'prop-types';
 import Helmet from 'react-helmet';
 import VersionStore from 'services/VersionStore';
 import VersionActions from 'services/VersionStore/VersionActions';
@@ -26,6 +27,7 @@ import classnames from 'classnames';
 import AdminManagementTabContent from 'components/Administration/AdminManagementTabContent';
 import AdminConfigTabContent from 'components/Administration/AdminConfigTabContent';
 import T from 'i18n-react';
+import {objectQuery} from 'services/helpers';
 
 require('./Administration.scss');
 
@@ -43,8 +45,12 @@ class Administration extends Component {
     platforms: [],
     uptime: 0,
     loading: true,
-    currentTab: ADMIN_TABS.management
+    currentTab: objectQuery(this.props.location, 'state', 'showConfigTab') ? ADMIN_TABS.config : ADMIN_TABS.management
   };
+
+  static propTypes = {
+    location: PropTypes.object
+  }
 
   componentDidMount() {
     this.getPlatforms();

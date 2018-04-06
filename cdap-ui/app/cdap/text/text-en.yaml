@@ -232,6 +232,7 @@ features:
         last24HrNodeHr: Last 24 hrs node/hr
         last24HrRuns: Last 24 hrs runs
         noProfiles: "No compute profiles have been defined in this namespace. Start by "
+        noProfilesSystem: "No compute profiles have been defined in the system. Start by "
         profileName: Profile Name
         profileUsage: Profile usage
         provisioner: Provisioner

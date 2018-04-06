@@ -26,11 +26,9 @@ import AddNamespaceWizard from 'components/CaskWizards/AddNamespace';
 import classnames from 'classnames';
 import globalEvents from 'services/global-events';
 import ee from 'event-emitter';
-require('./NamespaceAccordion.scss');
 
-export default class NamespaceAccordion extends Component {
+export default class NamespacesAccordion extends Component {
   state = {
-    expanded: false,
     loading: true,
     namespaceWizardOpen: false,
     namespacesInfo: [],
@@ -38,7 +36,9 @@ export default class NamespaceAccordion extends Component {
   };
 
   static propTypes = {
-    namespaces: PropTypes.array
+    namespaces: PropTypes.array,
+    expanded: PropTypes.bool,
+    onExpand: PropTypes.func
   };
 
   eventEmitter = ee(ee);
@@ -101,12 +101,6 @@ export default class NamespaceAccordion extends Component {
       );
   }
 
-  toggleExpanded = () => {
-    this.setState({
-      expanded: !this.state.expanded
-    });
-  }
-
   toggleNamespaceWizard = () => {
     this.setState({
       namespaceWizardOpen: !this.state.namespaceWizardOpen
@@ -123,10 +117,10 @@ export default class NamespaceAccordion extends Component {
     return (
       <div
         className="admin-config-container-toggle"
-        onClick={this.toggleExpanded}
+        onClick={this.props.onExpand}
       >
         <span className="admin-config-container-label">
-          <IconSVG name={this.state.expanded ? "icon-caret-down" : "icon-caret-right"} />
+          <IconSVG name={this.props.expanded ? "icon-caret-down" : "icon-caret-right"} />
           <h5>{`Namespaces (${this.state.namespacesInfo.length})`}</h5>
         </span>
         <span className="admin-config-container-description">
@@ -182,7 +176,7 @@ export default class NamespaceAccordion extends Component {
   }
 
   renderContent() {
-    if (!this.state.expanded) {
+    if (!this.props.expanded) {
       return null;
     }
 
@@ -233,7 +227,7 @@ export default class NamespaceAccordion extends Component {
     return (
       <div className={classnames(
         "admin-config-container namespaces-container",
-        {"expanded": this.state.expanded}
+        {"expanded": this.props.expanded}
       )}>
         {this.renderLabel()}
         {this.renderContent()}

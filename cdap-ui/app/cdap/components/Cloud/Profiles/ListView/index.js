@@ -92,12 +92,17 @@ export default class ProfilesListView extends Component {
   };
 
   static propTypes = {
+    namespace: PropTypes.string.isRequired,
     onChange: PropTypes.func
+  };
+
+  static defaultProps = {
+    namespace: getCurrentNamespace()
   };
 
   componentDidMount() {
     MyProfileApi.list({
-      namespace: getCurrentNamespace()
+      namespace: this.props.namespace
     })
     .subscribe(
       profiles => {
@@ -146,10 +151,27 @@ export default class ProfilesListView extends Component {
     if (!this.state.profiles.length) {
       return (
         <div className="text-xs-center">
-          {T.translate(`${PREFIX}.noProfiles`)}
-          <Link to={`/ns/${getCurrentNamespace()}/create-profile`}>
-            {T.translate(`${PREFIX}.createOne`)}
-          </Link>
+          {
+            this.props.namespace === 'system' ?
+              (
+                <span>
+                  {T.translate(`${PREFIX}.noProfilesSystem`)}
+                  <Link to='/create-profile'>
+                    {T.translate(`${PREFIX}.createOne`)}
+                  </Link>
+                </span>
+              )
+            :
+              (
+                <span>
+                  {T.translate(`${PREFIX}.noProfiles`)}
+                  <Link to={`/ns/${getCurrentNamespace()}/create-profile`}>
+                    {T.translate(`${PREFIX}.createOne`)}
+                  </Link>
+                </span>
+              )
+          }
+
         </div>
       );
     }
