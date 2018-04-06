@@ -21,6 +21,7 @@ import SetPreferenceModal from 'components/FastAction/SetPreferenceAction/SetPre
 import classnames from 'classnames';
 import {convertMapToKeyValuePairs} from 'services/helpers';
 import {MyPreferenceApi} from 'api/preference';
+import ViewAllLabel from 'components/ViewAllLabel';
 
 export default class SystemPrefsAccordion extends Component {
   state = {
@@ -132,7 +133,12 @@ export default class SystemPrefsAccordion extends Component {
           Edit System Preferences
         </button>
         {this.renderGrid()}
-        {this.renderViewAllLabel()}
+        <ViewAllLabel
+          arrayToLimit={this.state.prefsForDisplay}
+          limit={5}
+          viewAllState={this.state.viewAll}
+          toggleViewAll={this.toggleViewAll}
+        />
         {
           this.state.prefsModalOpen ?
             <SetPreferenceModal
@@ -144,26 +150,6 @@ export default class SystemPrefsAccordion extends Component {
             null
         }
       </div>
-    );
-  }
-
-  renderViewAllLabel() {
-    if (this.state.prefsForDisplay.length <= 5) {
-      return null;
-    }
-
-    return (
-      <span
-        className="view-more-label"
-        onClick={this.toggleViewAll}
-      >
-        {
-          this.state.viewAll ?
-            'View Less'
-          :
-            'View All'
-        }
-      </span>
     );
   }
 

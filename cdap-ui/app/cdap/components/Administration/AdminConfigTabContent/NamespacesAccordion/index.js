@@ -25,6 +25,7 @@ import AddNamespaceWizard from 'components/CaskWizards/AddNamespace';
 import classnames from 'classnames';
 import globalEvents from 'services/global-events';
 import ee from 'event-emitter';
+import ViewAllLabel from 'components/ViewAllLabel';
 
 export default class NamespacesAccordion extends Component {
   state = {
@@ -184,7 +185,12 @@ export default class NamespacesAccordion extends Component {
           Create New Namespace
         </button>
         {this.renderGrid()}
-        {this.renderViewAllLabel()}
+        <ViewAllLabel
+          arrayToLimit={this.state.namespacesInfo}
+          limit={10}
+          viewAllState={this.state.viewAll}
+          toggleViewAll={this.toggleViewAll}
+        />
         {
           this.state.namespaceWizardOpen ?
             <AddNamespaceWizard
@@ -195,26 +201,6 @@ export default class NamespacesAccordion extends Component {
             null
         }
       </div>
-    );
-  }
-
-  renderViewAllLabel() {
-    if (this.state.namespacesInfo.length <= 10) {
-      return null;
-    }
-
-    return (
-      <span
-        className="view-more-label"
-        onClick={this.toggleViewAll}
-      >
-        {
-          this.state.viewAll ?
-            'View Less'
-          :
-            'View All'
-        }
-      </span>
     );
   }
 

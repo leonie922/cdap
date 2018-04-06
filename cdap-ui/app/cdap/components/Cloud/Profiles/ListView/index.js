@@ -24,6 +24,7 @@ import classnames from 'classnames';
 import IconSVG from 'components/IconSVG';
 import LoadingSVG from 'components/LoadingSVG';
 import orderBy from 'lodash/orderBy';
+import ViewAllLabel from 'components/ViewAllLabel';
 require('./ListView.scss');
 
 const PREFIX = 'features.Cloud.Profiles.ListView';
@@ -182,7 +183,12 @@ export default class ProfilesListView extends Component {
           {this.renderProfilesTableHeader()}
           {this.renderProfilesTableBody()}
         </div>
-        {this.renderViewAllLabel()}
+        <ViewAllLabel
+          arrayToLimit={this.state.profiles}
+          limit={10}
+          viewAllState={this.state.viewAll}
+          toggleViewAll={this.toggleViewAll}
+        />
       </div>
     );
   }
@@ -279,26 +285,6 @@ export default class ProfilesListView extends Component {
           })
         }
       </div>
-    );
-  }
-
-  renderViewAllLabel() {
-    if (this.state.profiles.length <= 10) {
-      return null;
-    }
-
-    return (
-      <span
-        className="view-more-label"
-        onClick={this.toggleViewAll}
-      >
-        {
-          this.state.viewAll ?
-            T.translate(`${PREFIX}.viewLess`)
-          :
-            T.translate(`${PREFIX}.viewAll`)
-        }
-      </span>
     );
   }
 

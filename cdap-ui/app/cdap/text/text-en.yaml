@@ -239,8 +239,6 @@ features:
         schedules: Schedules
         totalNodeHr: Total node/hr
         triggers: Triggers
-        viewAll: View All
-        viewLess: View Less
   ConfirmationModal:
     cancelDefaultText: Cancel
     confirmDefaultText: OK
@@ -1343,8 +1341,6 @@ features:
       label: Preferences
       labelWithCount: Preferences ({count})
       noPreferences: No Preferences set for this namespace
-      viewAll: View All
-      viewLess: View Less
     scope: Scope
     security:
       keytabURI: 'Keytab URI: '
@@ -1993,6 +1989,10 @@ features:
     pipelineName: Pipeline Name
     title: "Pipelines to be triggered by \"{pipelineName}\""
     viewPipeline: View Pipeline
+
+  ViewAllLabel:
+    viewAll: View All
+    viewLess: View Less
 
   ViewSwitch:
     actionsLabel: Actions
