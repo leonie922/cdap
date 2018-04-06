@@ -27,8 +27,6 @@ let programPath = `${basepath}/:programType/:programName`;
 export const MyPipelineApi = {
   publish: apiCreator(dataSrc, 'PUT', 'REQUEST', basepath),
 
-  getSchedule: apiCreator(dataSrc, 'GET', 'REQUEST', `${schedulePath}`),
-  updateSchedule: apiCreator(dataSrc, 'POST', 'REQUEST', `${schedulePath}/update`),
   schedule: apiCreator(dataSrc, 'POST', 'REQUEST', `${schedulePath}/resume`),
   suspend: apiCreator(dataSrc, 'POST', 'REQUEST', `${schedulePath}/suspend`),
   getScheduleStatus: apiCreator(dataSrc, 'GET', 'REQUEST', `${schedulePath}/status`),

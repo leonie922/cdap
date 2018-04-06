@@ -25,7 +25,7 @@ import PipelineSchedulerStore, {
 } from 'components/PipelineScheduler/Store';
 import {getCurrentNamespace} from 'services/NamespaceStore';
 import PipelineDetailStore from 'components/PipelineDetails/store';
-import {MyPipelineApi} from 'api/pipeline';
+import {MyScheduleApi} from 'api/schedule';
 import {GLOBALS} from 'services/global-constants';
 
 function setStateFromCron(cron = PipelineSchedulerStore.getState().cron) {
@@ -182,12 +182,11 @@ function setSelectedProfile(selectedProfile) {
 
 function getTimeBasedSchedule() {
   let {name: appId} = PipelineDetailStore.getState();
-  let scheduleId = GLOBALS.defaultScheduleId;
-  MyPipelineApi
-    .getSchedule({
+  MyScheduleApi
+    .get({
       namespace: getCurrentNamespace(),
       appId,
-      scheduleId
+      scheduleName: GLOBALS.defaultScheduleId
     })
     .subscribe(
       (currentBackendSchedule) => {

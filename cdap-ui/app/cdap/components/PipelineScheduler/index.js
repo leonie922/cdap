@@ -29,7 +29,7 @@ import StatusMapper from 'services/StatusMapper';
 import {isDescendant, objectQuery} from 'services/helpers';
 import {Observable} from 'rxjs/Observable';
 import {PROFILES_DROPDOWN_DOM_CLASS} from 'components/PipelineScheduler/ProfilesForSchedule';
-import {MyPipelineApi} from 'api/pipeline';
+import {MyScheduleApi} from 'api/schedule';
 import T from 'i18n-react';
 import {PROFILE_NAME_PREFERENCE_PROPERTY} from 'components/PipelineConfigurations/ConfigurationsContent/ComputeTabContent/ProfilesListView';
 import {GLOBALS} from 'services/global-constants';
@@ -189,7 +189,7 @@ export default class PipelineScheduler extends Component {
     if (profiles.selectedProfile) {
       scheduleProperties = {
         ...scheduleProperties,
-        'system.profile.name': profiles.selectedProfile
+        [PROFILE_NAME_PREFERENCE_PROPERTY]: profiles.selectedProfile
       };
     }
     let newTrigger = {
@@ -204,11 +204,11 @@ export default class PipelineScheduler extends Component {
     };
     let {name: appId} = PipelineDetailStore.getState();
 
-    MyPipelineApi
-      .updateSchedule({
+    MyScheduleApi
+      .update({
         namespace: getCurrentNamespace(),
         appId,
-        scheduleId: GLOBALS.defaultScheduleId
+        scheduleName: GLOBALS.defaultScheduleId
       }, newSchedule)
       .subscribe(
         () => {
