@@ -63,10 +63,12 @@ public class RuntimeHandler extends AbstractHttpHandler {
 
   private final CConfiguration cConf;
   private final MessageFetcher messageFetcher;
+  private final Runnable shutdownRunnable;
 
-  public RuntimeHandler(CConfiguration cConf, MessageFetcher messageFetcher) {
+  public RuntimeHandler(CConfiguration cConf, MessageFetcher messageFetcher, Runnable shutdownRunnable) {
     this.cConf = cConf;
     this.messageFetcher = messageFetcher;
+    this.shutdownRunnable = shutdownRunnable;
   }
 
   /**
@@ -106,6 +108,12 @@ public class RuntimeHandler extends AbstractHttpHandler {
     }
 
     Closeables.closeQuietly(chunkResponder);
+  }
+
+  @POST
+  @Path("/shutdown")
+  public void shutdown(FullHttpRequest request, HttpResponder responder) throws Exception {
+    shutdownRunnable.run();
   }
 
   private void writeMessages(JsonWriter jsonWriter, ByteBuf buffer, ChunkResponder chunkResponder, String topic,

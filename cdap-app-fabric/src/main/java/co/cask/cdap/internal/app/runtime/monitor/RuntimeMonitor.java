@@ -23,6 +23,9 @@ import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.logging.LogSamplers;
 import co.cask.cdap.common.logging.Loggers;
+import co.cask.cdap.internal.app.runtime.ProgramOptionConstants;
+import co.cask.cdap.proto.Notification;
+import co.cask.cdap.proto.ProgramRunStatus;
 import co.cask.cdap.proto.id.NamespaceId;
 import co.cask.cdap.proto.id.ProgramRunId;
 import co.cask.common.http.HttpMethod;
@@ -35,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -69,6 +73,7 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
   private final long pollTimeMillis;
   private volatile Thread runThread;
   private volatile boolean stopped;
+  private volatile boolean isRuntimeInactive;
 
   public RuntimeMonitor(ProgramRunId programId, CConfiguration cConf, MessagePublisher messagePublisher,
                         ClientConfig clientConfig) {
@@ -119,7 +124,9 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
           Map<String, List<MonitorMessage>> monitorResponses =
             GSON.fromJson(response.getResponseBodyAsString(StandardCharsets.UTF_8), MAP_STRING_MESSAGE_TYPE);
 
-          processResponse(monitorResponses);
+          if (processResponse(monitorResponses) == 0 && isRuntimeInactive) {
+            triggerRuntimeShutdown();
+          }
         } catch (Exception e) {
           OUTAGE_LOG.warn("Failed to fetch monitoring data from program {}, run {}. Will be retried in next iteration.",
                           programId.getProgram(), programId.getRun(), e);
@@ -131,10 +138,16 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
     }
   }
 
-  private void processResponse(Map<String, List<MonitorMessage>> monitorResponses) throws Exception {
+  private int processResponse(Map<String, List<MonitorMessage>> monitorResponses) throws Exception {
+    int count = 0;
     for (Map.Entry<String, List<MonitorMessage>> monitorResponse : monitorResponses.entrySet()) {
+      if (monitorResponse.getKey().equals(Constants.AppFabric.PROGRAM_STATUS_EVENT_TOPIC)) {
+        setIsRuntimeInactive(monitorResponse.getValue());
+      }
       publish(monitorResponse.getKey(), monitorResponse.getValue());
+      count += monitorResponse.getValue().size();
     }
+    return count;
   }
 
   private void publish(String topicConfig, List<MonitorMessage> messages)
@@ -149,6 +162,28 @@ public class RuntimeMonitor extends AbstractExecutionThreadService {
 
     topicsToRequest.put(topicConfig, new MonitorConsumeRequest(messages.get(messages.size() - 1).getMessageId(),
                                                                limit));
+  }
+
+  private void triggerRuntimeShutdown() throws Exception {
+    try {
+      restClient.execute(HttpRequest.builder(HttpMethod.POST, clientConfig.resolveURL("runtime/shutdown")).build());
+    } catch (ConnectException e) {
+      LOG.trace("Connection refused when attempting to connect to Runtime Http Server. " +
+                  "Assuming that it is not available.");
+    }
+  }
+
+  private void setIsRuntimeInactive(List<MonitorMessage> monitorMessages) {
+    for (MonitorMessage message : monitorMessages) {
+      Notification notification = GSON.fromJson(message.getMessage(), Notification.class);
+      String programStatus = notification.getProperties().get(ProgramOptionConstants.PROGRAM_STATUS);
+      if (programStatus.equals(ProgramRunStatus.COMPLETED.name()) ||
+        programStatus.equals(ProgramRunStatus.FAILED.name()) ||
+        programStatus.equals(ProgramRunStatus.KILLED.name())) {
+        isRuntimeInactive = true;
+        break;
+      }
+    }
   }
 
   @Override

@@ -27,6 +27,7 @@ import co.cask.cdap.internal.app.runtime.handler.RuntimeHandler;
 import co.cask.cdap.internal.app.runtime.monitor.RuntimeMonitor;
 import co.cask.cdap.proto.id.NamespaceId;
 import co.cask.http.NettyHttpService;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,12 +59,26 @@ public class RuntimeServer extends AbstractIdleService {
                                                                        Constants.Service.RUNTIME_HTTP));
     httpService = new CommonNettyHttpServiceBuilder(cConf, Constants.Service.RUNTIME_HTTP)
       .setHost(hostname.getCanonicalHostName())
-      .setHttpHandlers(new RuntimeHandler(cConf, messageFetcher))
+      .setHttpHandlers(new RuntimeHandler(cConf, messageFetcher, new Runnable() {
+        @Override
+        public void run() {
+          try {
+            shutDown();
+          } catch (Exception e) {
+            LOG.error("Exception while stopping Runtime HTTP Server. ", e);
+          }
+        }
+      }))
       .setPort(cConf.getInt(Constants.RuntimeHandler.SERVER_PORT))
       .setExceptionHandler(new HttpExceptionHandler()).build();
 
     httpService.start();
     LOG.info("Runtime HTTP server started on {}", httpService.getBindAddress());
+  }
+
+  @VisibleForTesting
+  public NettyHttpService getHttpService() {
+    return httpService;
   }
 
   @Override
