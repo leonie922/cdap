@@ -1,5 +1,5 @@
 /*
- * Copyright © 2016-2018 Cask Data, Inc.
+ * Copyright © 2018 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -12,20 +12,31 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
  * the License.
- */
+*/
 
-export default {
-  APPUPLOAD: 'APPICATION_UPLOAD',
-  ARTIFACTUPLOAD: 'ARTIFACT_UPLOAD',
-  CLOSEMARKET: 'CLOSE_MARKET',
-  CREATENAMESPACE: 'CREATE_NAMESPACE',
-  DELETEENTITY: 'DELETE_ENTITY',
-  DIRECTIVEUPLOAD: 'DIRECTIVE_UPLOAD',
-  MARKETCLOSING: 'MARKET_CLOSING',
-  NONAMESPACE: 'NO_NAMESPACE',
-  OPENMARKET: 'OPEN_MARKET',
-  PUBLISHPIPELINE: 'PUBLISH_PIPELINE',
-  STREAMCREATE: 'STREAM_CREATE',
-  NSPREFERENCESSAVED: 'NS_PREFERENCES_SAVED',
-  NAMESPACECREATED: 'NAMESPACE_CREATED'
-};
+@import '../../../../styles/variables.scss';
+
+.namespaces-container {
+  .namespaces-container-content {
+    .btn.btn-secondary {
+      margin-top: -10px;
+    }
+
+    .grid-wrapper {
+      margin-bottom: 20px;
+
+      .grid.grid-container {
+        max-height: none;
+
+        .grid-header {
+          background-color: $grey-07;
+        }
+
+        .grid-row:hover {
+          background-color: $grey-07;
+        }
+      }
+    }
+
+  }
+}

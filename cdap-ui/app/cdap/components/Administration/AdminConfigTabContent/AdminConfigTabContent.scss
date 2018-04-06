@@ -12,14 +12,19 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
  * the License.
- */
+*/
 
 @import '../../../styles/variables.scss';
 $btn-color: $blue-03;
+$border-color: $grey-03;
+$hover-active-color: $grey-07;
 
 .admin-config-tab-content {
   .btn.btn-secondary {
     color: $btn-color;
+    border-color: $border-color;
+    font-size: 12px;
+    padding: 5px 20px;
   }
 
   .action-buttons {
@@ -27,6 +32,39 @@ $btn-color: $blue-03;
 
     .btn:first-child {
       margin-right: 15px;
+    }
+  }
+
+  .admin-config-container {
+    border-top: 1px solid $border-color;
+    border-bottom: 1px solid $border-color;
+    padding: 0 20px;
+
+    .admin-config-container-toggle {
+      cursor: pointer;
+      height: 70px;
+      display: flex;
+      align-items: center;
+
+      .admin-config-container-label {
+        width: 300px;
+        display: inline-flex;
+
+        .icon-svg {
+          font-size: 1.25rem;
+          margin-left: -15px;
+          margin-right: 5px;
+        }
+      }
+
+      .admin-config-container-description {
+        color: $border-color;
+      }
+    }
+
+    &:hover,
+    &.expanded {
+      background-color: $hover-active-color;
     }
   }
 }

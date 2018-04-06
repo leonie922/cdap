@@ -57,11 +57,23 @@ export function getType(entity) {
   }
 }
 
-export function entityIsApp(entity) {
+export function getCustomAppPipelineDatasetCounts(entities) {
+  let apps = entities.results.filter(entity => entityIsApp(entity));
+  let pipelineCount = apps.filter(entity => entityIsPipeline(entity)).length;
+  let customAppCount = apps.length - pipelineCount;
+  let datasetCount = entities.total - apps.length;
+  return {
+    pipelineCount,
+    customAppCount,
+    datasetCount
+  };
+}
+
+function entityIsApp(entity) {
   return objectQuery(entity, 'entityId', 'entity') === EntityType.application;
 }
 
-export function entityIsPipeline(entity) {
+function entityIsPipeline(entity) {
   return intersection(GLOBALS.etlPipelineTypes, objectQuery(entity, 'metadata', 'SYSTEM', 'tags')).length > 0;
 }
 

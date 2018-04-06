@@ -20,7 +20,7 @@ import {MySearchApi} from 'api/search';
 import {getCurrentNamespace} from 'services/NamespaceStore';
 import NamespaceDetailsStore, {NamespaceDetailsActions} from 'components/NamespaceDetails/store';
 import {Observable} from 'rxjs/Observable';
-import {entityIsApp, entityIsPipeline} from 'services/metadata-parser';
+import {getCustomAppPipelineDatasetCounts} from 'services/metadata-parser';
 
 function enableLoading() {
   NamespaceDetailsStore.dispatch({
@@ -104,11 +104,11 @@ function getData() {
           });
         }
 
-        let apps = entities.results.filter(entity => entityIsApp(entity));
-
-        let pipelineCount = apps.filter(entity => entityIsPipeline(entity)).length;
-        let customAppCount = apps.length - pipelineCount;
-        let datasetCount = entities.total - apps.length;
+        let {
+          pipelineCount,
+          customAppCount,
+          datasetCount
+        } = getCustomAppPipelineDatasetCounts(entities);
 
         let config = namespaceInfo.config;
 

@@ -17,16 +17,57 @@
 import React, {Component} from 'react';
 import ReloadSystemArtifacts from 'components/Administration/AdminConfigTabContent/ReloadSystemArtifacts';
 import HttpExecutorLink from 'components/Administration/AdminConfigTabContent/HttpExecutorLink';
+import NamespaceAccordion from 'components/Administration/AdminConfigTabContent/NamespaceAccordion';
+import LoadingSVGCentered from 'components/LoadingSVGCentered';
+import {MyNamespaceApi} from 'api/namespace';
+import {MyPreferenceApi} from 'api/preference';
+import {MyProfileApi} from 'api/cloud';
+import {Observable} from 'rxjs/Observable';
+
 require('./AdminConfigTabContent.scss');
 
 export default class AdminConfigTabContent extends Component {
+  state = {
+    namespaces: 0,
+    systemProfiles: 0,
+    systemPrefs: 0,
+    loading: true
+  };
+
+  componentWillMount() {
+    Observable
+      .forkJoin(
+        MyNamespaceApi.list(),
+        MyProfileApi.list({namespace: 'system'}),
+        MyPreferenceApi.getSystemPreferences()
+      )
+      .subscribe(
+        (res) => {
+          let [namespaces, systemProfiles, systemPrefs] = res;
+          this.setState({
+            namespaces,
+            systemProfiles,
+            systemPrefs,
+            loading: false
+          });
+        },
+        (err) => console.log(err)
+      );
+  }
+
   render() {
+    if (this.state.loading) {
+      return <LoadingSVGCentered />;
+    }
     return (
       <div className="admin-config-tab-content">
         <div className="action-buttons">
           <ReloadSystemArtifacts />
           <HttpExecutorLink />
         </div>
+        <NamespaceAccordion
+          namespaces={this.state.namespaces}
+        />
       </div>
     );
   }
