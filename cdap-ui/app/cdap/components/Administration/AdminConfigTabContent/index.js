@@ -19,6 +19,7 @@ import ReloadSystemArtifacts from 'components/Administration/AdminConfigTabConte
 import HttpExecutorLink from 'components/Administration/AdminConfigTabContent/HttpExecutorLink';
 import NamespacesAccordion from 'components/Administration/AdminConfigTabContent/NamespacesAccordion';
 import SystemProfilesAccordion from 'components/Administration/AdminConfigTabContent/SystemProfilesAccordion';
+import SystemPrefsAccordion from 'components/Administration/AdminConfigTabContent/SystemPrefsAccordion';
 import LoadingSVGCentered from 'components/LoadingSVGCentered';
 import {MyNamespaceApi} from 'api/namespace';
 import {MyPreferenceApi} from 'api/preference';
@@ -94,6 +95,11 @@ export default class AdminConfigTabContent extends Component {
           profiles={this.state.systemProfiles}
           expanded={this.state.expandedAccordion === ADMIN_CONFIG_ACCORDIONS.systemProfiles}
           onExpand={this.expandAccordion.bind(this, ADMIN_CONFIG_ACCORDIONS.systemProfiles)}
+        />
+        <SystemPrefsAccordion
+          prefs={this.state.systemPrefs}
+          expanded={this.state.expandedAccordion === ADMIN_CONFIG_ACCORDIONS.systemPrefs}
+          onExpand={this.expandAccordion.bind(this, ADMIN_CONFIG_ACCORDIONS.systemPrefs)}
         />
       </div>
     );
