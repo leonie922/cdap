@@ -25,13 +25,15 @@ import {setSelectedProfile} from 'components/PipelineScheduler/Store/ActionCreat
 import classnames from 'classnames';
 import {connect} from 'react-redux';
 import {preventPropagation} from 'services/helpers';
+import StatusMapper from 'services/StatusMapper';
 require('./ProfilesForSchedule.scss');
 
 export const PROFILES_DROPDOWN_DOM_CLASS = 'profiles-list-dropdown';
 
 class ProfilesForSchedule extends Component {
   static propTypes = {
-    selectedProfile: PropTypes.string
+    selectedProfile: PropTypes.string,
+    scheduleStatus: PropTypes.string
   };
 
   state = {
@@ -117,12 +119,15 @@ class ProfilesForSchedule extends Component {
       return null;
     }
     let selectedProfile = this.state.profiles.find(profile => profile.name === this.state.selectedProfile);
+    let isScheduled = this.props.scheduleStatus === StatusMapper.statusMap['SCHEDULED'];
     return (
       <UncontrolledDropdown
         className={PROFILES_DROPDOWN_DOM_CLASS}
         tether={{}} /* Apparently this attaches it to the body */
+        disabled={isScheduled}
       >
         <DropdownToggle
+          disabled={isScheduled}
           caret
         >
           {
@@ -156,7 +161,8 @@ class ProfilesForSchedule extends Component {
 
 const mapStateToProps = (state) => {
   return {
-    selectedProfile: state.profiles.selectedProfile
+    selectedProfile: state.profiles.selectedProfile,
+    scheduleStatus: state.scheduleStatus
   };
 };
 

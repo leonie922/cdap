@@ -19,10 +19,18 @@ import {Provider} from 'react-redux';
 import PropTypes from 'prop-types';
 import PipelineDetailStore from 'components/PipelineDetails/store';
 import PipelineSchedulerStore, {ACTIONS as PipelineSchedulerActions} from 'components/PipelineScheduler/Store';
-import {setStateFromCron, getTimeBasedSchedule} from 'components/PipelineScheduler/Store/ActionCreator';
+import {
+  setStateFromCron,
+  getTimeBasedSchedule,
+  setScheduleStatus
+} from 'components/PipelineScheduler/Store/ActionCreator';
 import ViewSwitch from 'components/PipelineScheduler/ViewSwitch';
 import ViewContainer from 'components/PipelineScheduler/ViewContainer';
-import {setSchedule, setMaxConcurrentRuns, setOptionalProperty} from 'components/PipelineDetails/store/ActionCreator';
+import {
+  setSchedule,
+  setMaxConcurrentRuns,
+  setOptionalProperty
+} from 'components/PipelineDetails/store/ActionCreator';
 import IconSVG from 'components/IconSVG';
 import {getCurrentNamespace} from 'services/NamespaceStore';
 import StatusMapper from 'services/StatusMapper';
@@ -57,6 +65,7 @@ export default class PipelineScheduler extends Component {
       savingAndScheduling: false,
       scheduleStatus: this.props.scheduleStatus
     };
+    setScheduleStatus(this.props.scheduleStatus);
 
     this.schedulerStoreSubscription = PipelineSchedulerStore.subscribe(() => {
       let state = PipelineSchedulerStore.getState();
@@ -333,6 +342,7 @@ export default class PipelineScheduler extends Component {
   }
 
   render() {
+    let isScheduled = this.state.scheduleStatus === StatusMapper.statusMap['SCHEDULED'];
     return (
       <Provider store={PipelineSchedulerStore}>
         <div
@@ -342,9 +352,11 @@ export default class PipelineScheduler extends Component {
           {this.renderHeader()}
           <div className="pipeline-scheduler-body modeless-content">
             <div className="schedule-content">
-                <fieldset disabled={this.state.scheduleStatus === StatusMapper.statusMap['SCHEDULED']}>
+                <fieldset disabled={isScheduled}>
                   <ViewSwitch />
-                  <ViewContainer isDetailView={this.props.isDetailView} />
+                  <ViewContainer
+                    isDetailView={this.props.isDetailView}
+                  />
                 </fieldset>
                 {this.renderActionButtons()}
             </div>

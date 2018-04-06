@@ -204,10 +204,20 @@ function getTimeBasedSchedule() {
     );
 }
 
+function setScheduleStatus(scheduleStatus) {
+  PipelineSchedulerStore.dispatch({
+    type: PipelineSchedulerActions.SET_SCHEDULE_STATUS,
+    payload: {
+      scheduleStatus
+    }
+  });
+}
+
 export {
   setStateFromCron,
   setSelectedProfile,
   getTimeBasedSchedule,
   getCronFromState,
-  updateCron
+  updateCron,
+  setScheduleStatus
 };
