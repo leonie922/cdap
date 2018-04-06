@@ -1,5 +1,5 @@
 /*
- * Copyright © 2016 Cask Data, Inc.
+ * Copyright © 2016-2018 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -19,7 +19,7 @@ package co.cask.cdap.internal.app.store.remote;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.internal.remote.RemoteOpsClient;
 import co.cask.cdap.data2.registry.DatasetUsageKey;
-import co.cask.cdap.data2.registry.RuntimeUsageRegistry;
+import co.cask.cdap.data2.registry.UsageWriter;
 import co.cask.cdap.proto.id.DatasetId;
 import co.cask.cdap.proto.id.EntityId;
 import co.cask.cdap.proto.id.ProgramId;
@@ -34,12 +34,12 @@ import java.util.concurrent.ConcurrentMap;
  * Implementation of RuntimeUsageRegistry, which uses an HTTP Client to execute the actual usage dataset updates in a
  * remote server.
  */
-public class RemoteRuntimeUsageRegistry extends RemoteOpsClient implements RuntimeUsageRegistry {
+public class RemoteUsageWriter extends RemoteOpsClient implements UsageWriter {
 
   private final ConcurrentMap<DatasetUsageKey, Boolean> registered = new ConcurrentHashMap<>();
 
   @Inject
-  RemoteRuntimeUsageRegistry(DiscoveryServiceClient discoveryClient) {
+  RemoteUsageWriter(DiscoveryServiceClient discoveryClient) {
     super(discoveryClient, Constants.Service.REMOTE_SYSTEM_OPERATION);
   }
 

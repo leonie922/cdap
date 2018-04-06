@@ -1,5 +1,5 @@
 /*
- * Copyright © 2016 Cask Data, Inc.
+ * Copyright © 2016-2018 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -31,19 +31,19 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Tests implementation of {@link RemoteRuntimeUsageRegistry}, by using it to perform writes/updates, and then using a
+ * Tests implementation of {@link RemoteUsageWriter}, by using it to perform writes/updates, and then using a
  * local {@link UsageRegistry} to verify the updates/writes.
  */
-public class RemoteRuntimeUsageRegistryTest extends AppFabricTestBase {
+public class RemoteUsageWriterTest extends AppFabricTestBase {
 
   private static UsageRegistry usageRegistry;
-  private static RemoteRuntimeUsageRegistry runtimeUsageRegistry;
+  private static RemoteUsageWriter runtimeUsageRegistry;
 
   @BeforeClass
   public static void setup() throws Exception {
     Injector injector = getInjector();
     usageRegistry = injector.getInstance(UsageRegistry.class);
-    runtimeUsageRegistry = injector.getInstance(RemoteRuntimeUsageRegistry.class);
+    runtimeUsageRegistry = injector.getInstance(RemoteUsageWriter.class);
   }
 
   @Test
