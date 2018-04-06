@@ -231,7 +231,9 @@ const schedule = (state = DEFAULT_SCHEDULE_OPTIONS, action = defaultAction) => {
       };
     }
     case ACTIONS.RESET:
+    default:
       return DEFAULT_SCHEDULE_OPTIONS;
+
   }
 };
 

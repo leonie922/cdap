@@ -19,7 +19,7 @@ import {Provider} from 'react-redux';
 import PropTypes from 'prop-types';
 import PipelineDetailStore from 'components/PipelineDetails/store';
 import PipelineSchedulerStore, {ACTIONS as PipelineSchedulerActions} from 'components/PipelineScheduler/Store';
-import {getTimeBasedSchedule} from 'components/PipelineScheduler/Store/ActionCreator';
+import {setStateFromCron, getTimeBasedSchedule} from 'components/PipelineScheduler/Store/ActionCreator';
 import ViewSwitch from 'components/PipelineScheduler/ViewSwitch';
 import ViewContainer from 'components/PipelineScheduler/ViewContainer';
 import {setSchedule, setMaxConcurrentRuns, setOptionalProperty} from 'components/PipelineDetails/store/ActionCreator';
@@ -41,12 +41,15 @@ require('./PipelineScheduler.scss');
 export default class PipelineScheduler extends Component {
   constructor(props) {
     super(props);
-    PipelineSchedulerStore.dispatch({
-      type: PipelineSchedulerActions.SET_MAX_CONCURRENT_RUNS,
-      payload: {
-        maxConcurrentRuns: this.props.maxConcurrentRuns
-      }
-    });
+    if (!this.props.isDetailView) {
+      PipelineSchedulerStore.dispatch({
+        type: PipelineSchedulerActions.SET_MAX_CONCURRENT_RUNS,
+        payload: {
+          maxConcurrentRuns: this.props.maxConcurrentRuns
+        }
+      });
+      setStateFromCron(this.props.schedule);
+    }
 
     this.state = {
       isScheduleChanged: false,
@@ -98,6 +101,9 @@ export default class PipelineScheduler extends Component {
 
       if (
         isDescendant(this.schedulerComponent, e.target) ||
+        // FIXME: There should be a better way to detect this.
+        // This is to detect if the click happened inside profiles dropdown
+        // We need this here as the profiles dropdown is attached to the body.
         isDescendant(
           document.querySelector(`body > .${PROFILES_DROPDOWN_DOM_CLASS}.dropdown`),
           e.target
@@ -206,7 +212,6 @@ export default class PipelineScheduler extends Component {
       }, newSchedule)
       .subscribe(
         () => {
-          // Once saved if the schedule
           if (shouldSchedule) {
             this.schedulePipeline();
           } else {
@@ -339,7 +344,7 @@ export default class PipelineScheduler extends Component {
             <div className="schedule-content">
                 <fieldset disabled={this.state.scheduleStatus === StatusMapper.statusMap['SCHEDULED']}>
                   <ViewSwitch />
-                  <ViewContainer />
+                  <ViewContainer isDetailView={this.props.isDetailView} />
                 </fieldset>
                 {this.renderActionButtons()}
             </div>
