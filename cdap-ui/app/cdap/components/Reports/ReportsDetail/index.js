@@ -38,12 +38,7 @@ export default class ReportsDetail extends Component {
 
     MyReportsApi.getSummary(params)
       .combineLatest(MyReportsApi.getRuns(params))
-      .subscribe((res) => {
-        let {
-          0:summary,
-          1:runsInfo
-        } = res;
-
+      .subscribe(([summary, runsInfo]) => {
         ReportsStore.dispatch({
           type: ReportsActions.setDetails,
           payload: {
@@ -70,7 +65,7 @@ export default class ReportsDetail extends Component {
           </div>
         </div>
 
-        <div className="reports-list-container">
+        <div className="reports-detail-container">
           <div className="action-section clearfix">
             <div className="date-container float-xs-left">
               Report generated on some date

@@ -14,7 +14,10 @@
  * the License.
  */
 
-.reports-list-container {
+.reports-detail-container {
+  // 70px for header
+  height: calc(100% - 70px);
+
   .action-section {
     height: 40px;
     line-height: 40px;

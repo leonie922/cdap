@@ -45,48 +45,64 @@ function getType(run) {
   }
 }
 
+function renderHeader() {
+  return (
+    <div className="grid-header">
+      <div className="grid-row">
+        <div>Namespace</div>
+        <div>Name</div>
+        <div>Type</div>
+        <div>Duration</div>
+        <div>Start time</div>
+        <div>End time</div>
+        <div>User</div>
+        <div>Start method</div>
+        <div># Log errors</div>
+        <div># Log warnings</div>
+        <div># Records out</div>
+      </div>
+    </div>
+  );
+}
+
+function renderBody(runs) {
+  return (
+    <div className="grid-body">
+      {
+        runs.map((run, i) => {
+          return (
+            <div
+              key={i}
+              className="grid-row"
+            >
+              <div>{run.namespace}</div>
+              <div>{getName(run)}</div>
+              <div>{getType(run)}</div>
+              <div>{run.duration}</div>
+              <div>{humanReadableDate(run.start)}</div>
+              <div>{humanReadableDate(run.end)}</div>
+              <div>{run.user}</div>
+              <div>{run.startMethod}</div>
+              <div>{run.numLogErrors}</div>
+              <div>{run.numLogWarnings}</div>
+              <div>{run.numRecordsOut}</div>
+            </div>
+          );
+        })
+      }
+    </div>
+  );
+}
+
 function RunsView({runs}) {
-  // this table will be having dynamic number of columns, so cannot use css grid
   return (
     <div className="reports-runs-container">
-      <table className="table">
-        <thead>
-          <th>Namespace</th>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Duration</th>
-          <th>Start time</th>
-          <th>End time</th>
-          <th>User</th>
-          <th>Start method</th>
-          <th># Log errors</th>
-          <th># Log warnings</th>
-          <th># Records out</th>
-        </thead>
-
-        <tbody>
-          {
-            runs.map((run, i) => {
-              // key needs to be changed to runId when info is available
-              return (
-                <tr key={i}>
-                  <td>{run.namespace}</td>
-                  <td>{getName(run)}</td>
-                  <td>{getType(run)}</td>
-                  <td>{run.duration}</td>
-                  <td>{humanReadableDate(run.start)}</td>
-                  <td>{humanReadableDate(run.end)}</td>
-                  <td>{run.user}</td>
-                  <td>{run.startMethod}</td>
-                  <td>{run.numLogErrors}</td>
-                  <td>{run.numLogWarnings}</td>
-                  <td>{run.numRecordsOut}</td>
-                </tr>
-              );
-            })
-          }
-        </tbody>
-      </table>
+      <div className="grid-wrapper">
+        <div className="grid grid-container">
+          {renderHeader()}
+          {renderBody(runs)}
+        </div>
+      </div>
     </div>
   );
 }
