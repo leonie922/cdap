@@ -55,13 +55,9 @@ $secondary-btn-color: $brand-primary;
       }
 
       fieldset {
-        /* 70px: height from bottom of buttons to horizontal line */
-        height: calc(100% - 70px);
-
         .schedule-types {
           display: flex;
           align-items: center;
-          height: 30px;
 
           .schedule-type {
             cursor: pointer;
@@ -81,10 +77,6 @@ $secondary-btn-color: $brand-primary;
 
         .schedule-type-content {
           border-bottom: 1px solid $border-color;
-
-          /*  30px: height of Basic | Advanced options */
-          height: calc(100% - 30px);
-
           label {
             font-weight: initial;
             margin-bottom: 0;

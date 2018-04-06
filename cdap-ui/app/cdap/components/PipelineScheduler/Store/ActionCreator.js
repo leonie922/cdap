@@ -162,8 +162,18 @@ function updateCron() {
   });
 }
 
+function setSelectedProfile(selectedProfile) {
+  PipelineSchedulerStore.dispatch({
+    type: PipelineSchedulerActions.SET_SELECTED_PROFILE,
+    payload: {
+      selectedProfile
+    }
+  });
+}
+
 export {
   setStateFromCron,
+  setSelectedProfile,
   getCronFromState,
   updateCron
 };

@@ -29,6 +29,7 @@ import {getCurrentNamespace} from 'services/NamespaceStore';
 import StatusMapper from 'services/StatusMapper';
 import {isDescendant} from 'services/helpers';
 import {Observable} from 'rxjs/Observable';
+import {PROFILES_DROPDOWN_DOM_CLASS} from 'components/PipelineScheduler/ProfilesForSchedule';
 import T from 'i18n-react';
 
 const PREFIX = 'features.PipelineScheduler';
@@ -81,7 +82,13 @@ export default class PipelineScheduler extends Component {
         return;
       }
 
-      if (isDescendant(this.schedulerComponent, e.target)) {
+      if (
+        isDescendant(this.schedulerComponent, e.target) ||
+        isDescendant(
+          document.querySelector(`body > .${PROFILES_DROPDOWN_DOM_CLASS}.dropdown`),
+          e.target
+        )
+      ) {
         return;
       }
 

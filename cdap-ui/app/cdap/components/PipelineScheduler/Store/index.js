@@ -70,6 +70,7 @@ const ACTIONS = {
   SET_STARTING_AT_AM_PM: 'SET_STARTING_AT_AM_PM',
   SET_MAX_CONCURRENT_RUNS: 'SET_MAXCURRENT_RUNS',
   SET_SCHEDULE_VIEW: 'SET_SCHEDULE_VIEW',
+  SET_SELECTED_PROFILE: 'SET_SELECTED_PROFILE',
   RESET: 'RESET'
 };
 
@@ -86,7 +87,10 @@ const DEFAULT_SCHEDULE_OPTIONS = {
   startingAtHour: HOUR_OPTIONS[0],
   startingAtAMPM: AM_PM_OPTIONS[0],
   maxConcurrentRuns: MAX_CONCURRENT_RUNS_OPTIONS[0],
-  scheduleView: Object.values(SCHEDULE_VIEWS)[0]
+  scheduleView: Object.values(SCHEDULE_VIEWS)[0],
+  profiles: {
+    selectedProfile: null
+  }
 };
 
 const schedule = (state = DEFAULT_SCHEDULE_OPTIONS, action = defaultAction) => {
@@ -174,6 +178,13 @@ const schedule = (state = DEFAULT_SCHEDULE_OPTIONS, action = defaultAction) => {
       return {
         ...state,
         maxConcurrentRuns: parseInt(action.payload.maxConcurrentRuns, 10)
+      };
+    case ACTIONS.SET_SELECTED_PROFILE:
+      return {
+        ...state,
+        profiles: {
+          selectedProfile: action.payload.selectedProfile
+        }
       };
     case ACTIONS.SET_SCHEDULE_VIEW:
       return {

@@ -19,6 +19,7 @@ import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {setStateFromCron} from 'components/PipelineScheduler/Store/ActionCreator';
 import {ACTIONS as PipelineSchedulerActions} from 'components/PipelineScheduler/Store';
+import ProfilesForSchedule from 'components/PipelineScheduler/ProfilesForSchedule';
 import T from 'i18n-react';
 
 const PREFIX = 'features.PipelineScheduler.advanced';
@@ -101,6 +102,7 @@ export default function AdvancedView() {
           colWidth={3}
         />
       </div>
+      <ProfilesForSchedule />
     </div>
   );
 }

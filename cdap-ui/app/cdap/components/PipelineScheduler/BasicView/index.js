@@ -20,6 +20,7 @@ import RepeatEvery from 'components/PipelineScheduler/BasicView/RepeatEvery';
 import StartingAt from 'components/PipelineScheduler/BasicView/StartingAt';
 import MaxConcurrentRuns from 'components/PipelineScheduler/BasicView/MaxConcurrentRuns';
 import Summary from 'components/PipelineScheduler/BasicView/Summary';
+import ProfilesForSchedule from 'components/PipelineScheduler/ProfilesForSchedule';
 
 export default function BasicView() {
   return (
@@ -29,6 +30,7 @@ export default function BasicView() {
       <StartingAt />
       <MaxConcurrentRuns />
       <Summary />
+      <ProfilesForSchedule />
     </div>
   );
 }
