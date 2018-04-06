@@ -52,7 +52,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -102,7 +101,7 @@ public class AppMetadataStoreTest {
 
     Table table = datasetFramework.getDataset(storeTable, ImmutableMap.<String, String>of(), null);
     Assert.assertNotNull(table);
-    final AppMetadataStore metadataStoreDataset = new AppMetadataStore(table, cConf, new AtomicBoolean(false));
+    final AppMetadataStore metadataStoreDataset = new AppMetadataStore(table, cConf);
     TransactionExecutor txnl = txExecutorFactory.createExecutor(
       Collections.singleton(metadataStoreDataset));
 
@@ -144,7 +143,7 @@ public class AppMetadataStoreTest {
 
     Table table = datasetFramework.getDataset(storeTable, ImmutableMap.of(), null);
     Assert.assertNotNull(table);
-    return new AppMetadataStore(table, cConf, new AtomicBoolean(false));
+    return new AppMetadataStore(table, cConf);
   }
 
   private TransactionExecutor getTxExecutor(AppMetadataStore metadataStoreDataset) {
