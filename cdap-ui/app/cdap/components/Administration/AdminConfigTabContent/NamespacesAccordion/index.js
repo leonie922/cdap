@@ -26,6 +26,9 @@ import classnames from 'classnames';
 import globalEvents from 'services/global-events';
 import ee from 'event-emitter';
 import ViewAllLabel from 'components/ViewAllLabel';
+import T from 'i18n-react';
+
+const PREFIX = 'features.Administration.Accordions.Namespace';
 
 export default class NamespacesAccordion extends Component {
   state = {
@@ -117,10 +120,10 @@ export default class NamespacesAccordion extends Component {
       >
         <span className="admin-config-container-label">
           <IconSVG name={this.props.expanded ? "icon-caret-down" : "icon-caret-right"} />
-          <h5>{`Namespaces (${this.state.namespacesInfo.length})`}</h5>
+          <h5>{T.translate(`${PREFIX}.labelWithCount`, {count: this.state.namespacesInfo.length})}</h5>
         </span>
         <span className="admin-config-container-description">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.
+          {T.translate(`${PREFIX}.description`)}
         </span>
       </div>
     );
@@ -146,10 +149,10 @@ export default class NamespacesAccordion extends Component {
         <div className="grid grid-container">
           <div className="grid-header">
             <div className="grid-row">
-              <strong>Name</strong>
-              <strong>Custom Apps</strong>
-              <strong>Pipelines</strong>
-              <strong>Datasets</strong>
+              <strong>{T.translate('commons.nameLabel')}</strong>
+              <strong>{T.translate(`${PREFIX}.customApps`)}</strong>
+              <strong>{T.translate('commons.pipelines')}</strong>
+              <strong>{T.translate('commons.entity.dataset.plural')}</strong>
             </div>
           </div>
           <div className="grid-body">
@@ -182,7 +185,7 @@ export default class NamespacesAccordion extends Component {
           className="btn btn-secondary"
           onClick={this.toggleNamespaceWizard}
         >
-          Create New Namespace
+          {T.translate(`${PREFIX}.create`)}
         </button>
         {this.renderGrid()}
         <ViewAllLabel

@@ -42,7 +42,7 @@ const NamespaceDetailsEntityCounts = ({customAppCount, pipelineCount, datasetCou
         <div>{pipelineCount}</div>
       </div>
       <div className="entity-count">
-        <span>{T.translate(`${PREFIX}.datasets`)}</span>
+        <span>{T.translate('commons.entity.dataset.plural')}</span>
         <div>{datasetCount}</div>
       </div>
     </div>

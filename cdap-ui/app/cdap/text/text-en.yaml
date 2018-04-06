@@ -128,6 +128,21 @@ features:
       error: Login failed. Please check your username and password and try again.
     modalHeader: Access Token
   Administration:
+    Accordions:
+      Namespace:
+        create: Create New Namespace
+        customApps: Custom Apps
+        description: Create, View and Manage Namespaces
+        labelWithCount: "Namespaces ({count})"
+      SystemPrefs:
+        create: Edit System Preferences
+        description: Manage system preferences available as runtime arguments to programs across all namespaces
+        labelWithCount: "System Preferences ({count})"
+        noPrefs: No System Preferences set
+      SystemProfiles:
+        create: Create New Profile
+        description: Manage compute profiles available to launch programs in all namespaces
+        labelWithCount: "System Compute Profiles ({count})"
     Component-Overview:
       emptyMessage: Available only in Distributed mode
       headers:
@@ -1327,7 +1342,6 @@ features:
     edit: Edit
     entityCounts:
       customApps: Custom Apps
-      datasets: Datasets
     mapping:
       hbaseNamespaceName: 'HBase Namespace Name: '
       hdfsRootDirectory: 'HDFS Root Directory: '

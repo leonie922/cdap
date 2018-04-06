@@ -20,6 +20,9 @@ import {Link} from 'react-router-dom';
 import ProfilesListView from 'components/Cloud/Profiles/ListView';
 import classnames from 'classnames';
 import IconSVG from 'components/IconSVG';
+import T from 'i18n-react';
+
+const PREFIX = 'features.Administration.Accordions.SystemProfiles';
 
 export default class SystemProfilesAccordion extends Component {
   state = {
@@ -46,10 +49,10 @@ export default class SystemProfilesAccordion extends Component {
       >
         <span className="admin-config-container-label">
           <IconSVG name={this.props.expanded ? "icon-caret-down" : "icon-caret-right"} />
-          <h5>{`System Compute Profiles (${this.state.profilesCount})`}</h5>
+          <h5>{T.translate(`${PREFIX}.labelWithCount`, {count: this.state.profilesCount})}</h5>
         </span>
         <span className="admin-config-container-description">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.
+          {T.translate(`${PREFIX}.description`)}
         </span>
       </div>
     );
@@ -66,7 +69,7 @@ export default class SystemProfilesAccordion extends Component {
           className="btn btn-secondary"
           to='/create-profile'
         >
-          Create New Profile
+          {T.translate(`${PREFIX}.create`)}
         </Link>
         <ProfilesListView
           namespace='system'

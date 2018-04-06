@@ -22,6 +22,9 @@ import classnames from 'classnames';
 import {convertMapToKeyValuePairs} from 'services/helpers';
 import {MyPreferenceApi} from 'api/preference';
 import ViewAllLabel from 'components/ViewAllLabel';
+import T from 'i18n-react';
+
+const PREFIX = 'features.Administration.Accordions.SystemPrefs';
 
 export default class SystemPrefsAccordion extends Component {
   state = {
@@ -69,10 +72,10 @@ export default class SystemPrefsAccordion extends Component {
       >
         <span className="admin-config-container-label">
           <IconSVG name={this.props.expanded ? "icon-caret-down" : "icon-caret-right"} />
-          <h5>{`System Preferences (${this.state.prefsForDisplay.length})`}</h5>
+          <h5>{T.translate(`${PREFIX}.labelWithCount`, {count: this.state.prefsForDisplay.length})}</h5>
         </span>
         <span className="admin-config-container-description">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.
+          {T.translate(`${PREFIX}.description`)}
         </span>
       </div>
     );
@@ -82,7 +85,7 @@ export default class SystemPrefsAccordion extends Component {
     if (!this.state.prefsForDisplay.length) {
       return (
         <div className="grid-wrapper text-xs-center">
-          No System Preferences set
+          {T.translate(`${PREFIX}.noPrefs`)}
         </div>
       );
     }
@@ -98,8 +101,8 @@ export default class SystemPrefsAccordion extends Component {
         <div className="grid grid-container">
           <div className="grid-header">
             <div className="grid-row">
-              <strong>Key</strong>
-              <strong>Value</strong>
+              <strong>{T.translate('commons.keyValPairs.keyLabel')}</strong>
+              <strong>{T.translate('commons.keyValPairs.valueLabel')}</strong>
             </div>
           </div>
           <div className="grid-body">
@@ -130,7 +133,7 @@ export default class SystemPrefsAccordion extends Component {
           className="btn btn-secondary"
           onClick={this.togglePrefsModal}
         >
-          Edit System Preferences
+          {T.translate(`${PREFIX}.create`)}
         </button>
         {this.renderGrid()}
         <ViewAllLabel
