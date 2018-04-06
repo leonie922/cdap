@@ -47,7 +47,9 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,17 +68,18 @@ public class RuntimeMonitorTest {
   protected static Injector injector;
   protected static CConfiguration cConf;
   protected static MessagingService messagingService;
-  private InetAddress address;
   private RuntimeServer runtimeServer;
   private MessagingContext messagingContext;
+
+  @ClassRule
+  public static final TemporaryFolder TMP_FOLDER = new TemporaryFolder();
 
   @Before
   public void init() throws IOException, UnsupportedTypeException, TopicAlreadyExistsException {
     cConf = CConfiguration.create();
-    cConf.set(Constants.AppFabric.OUTPUT_DIR, System.getProperty("java.io.tmpdir"));
-    cConf.set(Constants.AppFabric.TEMP_DIR, System.getProperty("java.io.tmpdir"));
+    cConf.set(Constants.CFG_LOCAL_DATA_DIR, TMP_FOLDER.newFolder().getAbsolutePath());
     cConf.set(Constants.AppFabric.PROGRAM_STATUS_EVENT_TOPIC, "programStatus");
-    cConf.set(Constants.RuntimeHandler.SERVER_PORT, "1234");
+    cConf.set(Constants.RuntimeHandler.SERVER_PORT, "0");
     cConf.set(Constants.RuntimeMonitor.BATCH_LIMIT, "2");
     cConf.set(Constants.RuntimeMonitor.POLL_TIME_MS, "200");
     cConf.set(Constants.RuntimeMonitor.TOPICS_CONFIGS, Constants.AppFabric.PROGRAM_STATUS_EVENT_TOPIC);
@@ -85,10 +88,10 @@ public class RuntimeMonitorTest {
     if (messagingService instanceof Service) {
       ((Service) messagingService).startAndWait();
     }
-    address = InetAddress.getLoopbackAddress();
+
     messagingContext = new MultiThreadMessagingContext(messagingService);
     messagingService.createTopic(new TopicMetadata(new TopicId("system", "cdap-programStatus")));
-    runtimeServer = new RuntimeServer(cConf, address, messagingContext.getMessageFetcher());
+    runtimeServer = new RuntimeServer(cConf, InetAddress.getLoopbackAddress(), messagingContext.getMessageFetcher());
     runtimeServer.startAndWait();
   }
 
@@ -106,8 +109,8 @@ public class RuntimeMonitorTest {
     verifyPublishedMessages(3, cConf);
 
     ConnectionConfig connectionConfig = ConnectionConfig.builder()
-      .setHostname(address.getHostAddress())
-      .setPort(1234)
+      .setHostname(runtimeServer.getHttpService().getBindAddress().getAddress().getHostAddress())
+      .setPort(runtimeServer.getHttpService().getBindAddress().getPort())
       .setSSLEnabled(false)
       .build();
     ClientConfig.Builder clientConfigBuilder = ClientConfig.builder()
@@ -127,6 +130,16 @@ public class RuntimeMonitorTest {
     runtimeMonitor.startAndWait();
     // use different configuration for verification
     verifyPublishedMessages(2, cConfCopy);
+
+    // wait for runtime server to stop automatically
+    Tasks.waitFor(
+      true, new Callable<Boolean>() {
+        @Override
+        public Boolean call() throws Exception {
+          return !runtimeServer.isRunning();
+        }
+      }, 5, TimeUnit.MINUTES);
+
     runtimeMonitor.stopAndWait();
   }
 

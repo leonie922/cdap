@@ -113,6 +113,7 @@ public class RuntimeHandler extends AbstractHttpHandler {
   @POST
   @Path("/shutdown")
   public void shutdown(FullHttpRequest request, HttpResponder responder) throws Exception {
+    responder.sendString(HttpResponseStatus.OK, "Triggering shutdown down Runtime Http Server.");
     shutdownRunnable.run();
   }
 

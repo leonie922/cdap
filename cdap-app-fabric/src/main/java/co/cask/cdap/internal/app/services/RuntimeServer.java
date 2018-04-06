@@ -63,7 +63,7 @@ public class RuntimeServer extends AbstractIdleService {
         @Override
         public void run() {
           try {
-            shutDown();
+            stop();
           } catch (Exception e) {
             LOG.error("Exception while stopping Runtime HTTP Server. ", e);
           }
