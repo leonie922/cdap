@@ -18,7 +18,6 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import {MySearchApi} from 'api/search';
 import {MyNamespaceApi} from 'api/namespace';
-import {Observable} from 'rxjs/Observable';
 import {getCustomAppPipelineDatasetCounts} from 'services/metadata-parser';
 import IconSVG from 'components/IconSVG';
 import LoadingSVG from 'components/LoadingSVG';
@@ -69,16 +68,12 @@ export default class NamespacesAccordion extends Component {
 
     let namespacesInfo = [];
 
-    Observable
-      .forkJoin(
-        namespaces.map(namespace => {
-          searchParams.namespace = namespace.name;
-          return MySearchApi.search(searchParams);
-        })
-      )
-      .subscribe(
-        (namespacesEntities) => {
-          namespacesEntities.forEach((entities, index) => {
+    namespaces.forEach(namespace => {
+      searchParams.namespace = namespace.name;
+      MySearchApi
+        .search(searchParams)
+        .subscribe(
+          (entities) => {
             let {
               pipelineCount,
               customAppCount,
@@ -86,19 +81,19 @@ export default class NamespacesAccordion extends Component {
             } = getCustomAppPipelineDatasetCounts(entities);
 
             namespacesInfo.push({
-              name: namespaces[index].name,
+              name: namespace.name,
               pipelineCount,
               customAppCount,
               datasetCount
             });
-          });
-          this.setState({
-            namespacesInfo,
-            loading: false
-          });
-        },
-        (err) => console.log(err)
-      );
+            this.setState({
+              namespacesInfo,
+              loading: false
+            });
+          },
+          (err) => console.log(err)
+        );
+    });
   }
 
   toggleNamespaceWizard = () => {

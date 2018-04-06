@@ -16,7 +16,6 @@
 
 import React, {Component} from 'react';
 import ReloadSystemArtifacts from 'components/Administration/AdminConfigTabContent/ReloadSystemArtifacts';
-import HttpExecutorLink from 'components/Administration/AdminConfigTabContent/HttpExecutorLink';
 import NamespacesAccordion from 'components/Administration/AdminConfigTabContent/NamespacesAccordion';
 import SystemProfilesAccordion from 'components/Administration/AdminConfigTabContent/SystemProfilesAccordion';
 import SystemPrefsAccordion from 'components/Administration/AdminConfigTabContent/SystemPrefsAccordion';
@@ -25,6 +24,8 @@ import {MyNamespaceApi} from 'api/namespace';
 import {MyPreferenceApi} from 'api/preference';
 import {MyProfileApi} from 'api/cloud';
 import {Observable} from 'rxjs/Observable';
+import {Link} from 'react-router-dom';
+import T from 'i18n-react';
 
 require('./AdminConfigTabContent.scss');
 
@@ -84,7 +85,12 @@ export default class AdminConfigTabContent extends Component {
       <div className="admin-config-tab-content">
         <div className="action-buttons">
           <ReloadSystemArtifacts />
-          <HttpExecutorLink />
+          <Link
+            to="/httpexecutor"
+            className="btn btn-secondary"
+          >
+            {T.translate(`features.Administration.Configure.buttons.MakeRESTCalls.label`)}
+          </Link>
         </div>
         <NamespacesAccordion
           namespaces={this.state.namespaces}
