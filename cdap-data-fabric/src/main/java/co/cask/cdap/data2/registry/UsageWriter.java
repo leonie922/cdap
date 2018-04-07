@@ -33,7 +33,11 @@ public interface UsageWriter {
    * @param users the users of the stream
    * @param streamId the stream
    */
-  void registerAll(Iterable<? extends EntityId> users, StreamId streamId);
+  default void registerAll(Iterable<? extends EntityId> users, StreamId streamId) {
+    for (EntityId user : users) {
+      register(user, streamId);
+    }
+  }
 
   /**
    * Register usage of a stream by an id.
@@ -49,7 +53,11 @@ public interface UsageWriter {
    * @param users the users of the stream
    * @param datasetId the stream
    */
-  void registerAll(Iterable<? extends EntityId> users, DatasetId datasetId);
+  default void registerAll(Iterable<? extends EntityId> users, DatasetId datasetId) {
+    for (EntityId user : users) {
+      register(user, datasetId);
+    }
+  }
 
   /**
    * Registers usage of a dataset by multiple ids.

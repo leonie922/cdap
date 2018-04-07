@@ -30,7 +30,8 @@ public final class MetadataMessage {
    * The message type.
    */
   public enum Type {
-    LINEAGE
+    LINEAGE,
+    USAGE
   }
 
   private final Type type;

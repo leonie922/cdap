@@ -31,6 +31,8 @@ import co.cask.cdap.data2.dataset2.MultiThreadDatasetCache;
 import co.cask.cdap.data2.metadata.lineage.LineageDataset;
 import co.cask.cdap.data2.metadata.writer.DataAccessLineage;
 import co.cask.cdap.data2.metadata.writer.MetadataMessage;
+import co.cask.cdap.data2.registry.DatasetUsage;
+import co.cask.cdap.data2.registry.UsageDataset;
 import co.cask.cdap.data2.transaction.TransactionSystemClientAdapter;
 import co.cask.cdap.data2.transaction.Transactions;
 import co.cask.cdap.internal.app.store.AppMetadataStore;
@@ -47,6 +49,7 @@ import org.apache.tephra.TransactionSystemClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -66,7 +69,9 @@ public class MetadataSubscriberService extends AbstractMessagingSubscriberServic
   private final DatasetFramework datasetFramework;
   private final Transactional transactional;
   private final MultiThreadMessagingContext messagingContext;
+
   private DatasetId lineageDatasetId = LineageDataset.LINEAGE_DATASET_ID;
+  private DatasetId usageDatasetId = UsageDataset.USAGE_INSTANCE_ID;
 
   @Inject
   MetadataSubscriberService(CConfiguration cConf, MessagingService messagingService,
@@ -92,7 +97,7 @@ public class MetadataSubscriberService extends AbstractMessagingSubscriberServic
     this.transactional = Transactions.createTransactionalWithRetry(
       Transactions.createTransactional(new MultiThreadDatasetCache(
         new SystemDatasetInstantiator(datasetFramework), new TransactionSystemClientAdapter(txClient),
-        NamespaceId.SYSTEM, ImmutableMap.of(), null, null, messagingContext)),
+        NamespaceId.SYSTEM, Collections.emptyMap(), null, null, messagingContext)),
       org.apache.tephra.RetryStrategies.retryOnConflict(20, 100)
     );
   }
@@ -101,8 +106,18 @@ public class MetadataSubscriberService extends AbstractMessagingSubscriberServic
    * Sets the {@link DatasetId} for the {@link LineageDataset}. This method is only for testing.
    */
   @VisibleForTesting
-  void setLineageDatasetId(DatasetId lineageDatasetId) {
+  MetadataSubscriberService setLineageDatasetId(DatasetId lineageDatasetId) {
     this.lineageDatasetId = lineageDatasetId;
+    return this;
+  }
+
+  /**
+   * Sets the {@link DatasetId} for the {@link UsageDataset}. This method is only for testing.
+   */
+  @VisibleForTesting
+  MetadataSubscriberService setUsageDatasetId(DatasetId usageDatasetId) {
+    this.usageDatasetId = usageDatasetId;
+    return this;
   }
 
   @Override
@@ -145,6 +160,8 @@ public class MetadataSubscriberService extends AbstractMessagingSubscriberServic
         switch (type) {
           case LINEAGE:
             return new DataAccessLineageProcessor(datasetContext);
+          case USAGE:
+            return new UsageProcessor(datasetContext);
           default:
             return null;
         }
@@ -193,6 +210,31 @@ public class MetadataSubscriberService extends AbstractMessagingSubscriberServic
       } else {
         // This shouldn't happen
         LOG.warn("Missing dataset id from the lineage access information. Ignoring the message {}", lineage);
+      }
+    }
+  }
+
+  /**
+   * The {@link MetadataMessageProcessor} for processing
+   */
+  private final class UsageProcessor implements MetadataMessageProcessor {
+
+    private final UsageDataset usageDataset;
+
+    UsageProcessor(DatasetContext datasetContext) {
+      usageDataset = UsageDataset.getUsageDataset(datasetContext, datasetFramework, usageDatasetId);
+    }
+
+    @Override
+    public void processMessage(MetadataMessage message) {
+      DatasetUsage usage = message.getPayload(GSON, DatasetUsage.class);
+      if (usage.getDatasetId() != null) {
+        usageDataset.register(usage.getProgramId(), usage.getDatasetId());
+      } else if (usage.getDatasetId() != null) {
+        usageDataset.register(usage.getProgramId(), usage.getStreamId());
+      } else {
+        // This shouldn't happen
+        LOG.warn("Missing dataset id from the usage information. Ignoring the message {}", usage);
       }
     }
   }
