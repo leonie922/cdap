@@ -561,7 +561,7 @@ public class CoreSchedulerServiceTest extends AppFabricTestBase {
       public MessageId call(DatasetContext context) throws Exception {
         JobQueueDataset jobQueue = context.getDataset(Schedulers.JOB_QUEUE_DATASET_ID.getNamespace(),
                                                       Schedulers.JOB_QUEUE_DATASET_ID.getDataset());
-        String id = jobQueue.retrieveSubscriberState(topic.getTopic());
+        String id = jobQueue.retrieveSubscriberState(topic.getTopic(), "");
         if (id == null) {
           return null;
         }

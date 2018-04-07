@@ -1280,17 +1280,27 @@ public class AppMetadataStore extends MetadataStoreDataset implements TopicMessa
 
   @Nullable
   @Override
-  public String retrieveSubscriberState(String topic) {
-    MDSKey.Builder keyBuilder = new MDSKey.Builder().add(TYPE_MESSAGE)
-      .add(topic);
+  public String retrieveSubscriberState(String topic, String subscriber) {
+    MDSKey.Builder keyBuilder = new MDSKey.Builder().add(TYPE_MESSAGE).add(topic);
+
+    // For backward compatibility, skip the subscriber part if it is empty or null
+    if (subscriber != null && !subscriber.isEmpty()) {
+      keyBuilder.add(subscriber);
+    }
+
     byte[] rawBytes = get(keyBuilder.build(), BYTE_TYPE);
     return (rawBytes == null) ? null : Bytes.toString(rawBytes);
   }
 
   @Override
-  public void persistSubscriberState(String topic, String messageId) {
-    MDSKey.Builder keyBuilder = new MDSKey.Builder().add(TYPE_MESSAGE)
-      .add(topic);
+  public void persistSubscriberState(String topic, String subscriber, String messageId) {
+    MDSKey.Builder keyBuilder = new MDSKey.Builder().add(TYPE_MESSAGE).add(topic);
+
+    // For backward compatibility, skip the subscriber part if it is empty or null
+    if (subscriber != null && !subscriber.isEmpty()) {
+      keyBuilder.add(subscriber);
+    }
+
     write(keyBuilder.build(), Bytes.toBytes(messageId));
   }
 

@@ -122,12 +122,12 @@ public class ScheduleNotificationSubscriberService extends AbstractIdleService {
     @Nullable
     @Override
     protected String loadMessageId(DatasetContext datasetContext) throws Exception {
-      return getJobQueue(datasetContext).retrieveSubscriberState(getTopicId().getTopic());
+      return getJobQueue(datasetContext).retrieveSubscriberState(getTopicId().getTopic(), "");
     }
 
     @Override
     protected void storeMessageId(DatasetContext datasetContext, String messageId) throws Exception {
-      getJobQueue(datasetContext).persistSubscriberState(getTopicId().getTopic(), messageId);
+      getJobQueue(datasetContext).persistSubscriberState(getTopicId().getTopic(), "", messageId);
     }
 
     @Override

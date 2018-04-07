@@ -77,12 +77,12 @@ public class ProgramNotificationSubscriberService extends AbstractNotificationSu
   @Nullable
   @Override
   protected String loadMessageId(DatasetContext datasetContext) throws Exception {
-    return getAppMetadataStore(datasetContext).retrieveSubscriberState(getTopicId().getTopic());
+    return getAppMetadataStore(datasetContext).retrieveSubscriberState(getTopicId().getTopic(), "");
   }
 
   @Override
   protected void storeMessageId(DatasetContext datasetContext, String messageId) throws Exception {
-    getAppMetadataStore(datasetContext).persistSubscriberState(getTopicId().getTopic(), messageId);
+    getAppMetadataStore(datasetContext).persistSubscriberState(getTopicId().getTopic(), "", messageId);
   }
 
   @Override

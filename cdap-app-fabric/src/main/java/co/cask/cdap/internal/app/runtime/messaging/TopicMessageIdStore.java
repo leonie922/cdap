@@ -25,21 +25,22 @@ import javax.annotation.Nullable;
  */
 public interface TopicMessageIdStore {
   /**
-   * Gets the id of the last fetched message that was set for a given TMS topic. This method is called before
-   * processing messages from TMS so that the subscriber fetches previously unseen notifications.
+   * Gets the id of the last fetched message that was set for a subscriber of the given TMS topic
    *
    * @param topic the topic to lookup the last message id
-   * @return the id of the last fetched message for this topic, or null if no message id was stored from the given topic
+   * @param subscriber the subscriber name
+   * @return the id of the last fetched message for this subscriber on this topic,
+   *         or {@code null} if no message id was stored before
    */
   @Nullable
-  String retrieveSubscriberState(String topic);
+  String retrieveSubscriberState(String topic, String subscriber);
 
   /**
-   * Updates the given topic's last fetched message id with the given message id. This method is called after
-   * processing a message from TMS under the given topic.
+   * Updates the given topic's last fetched message id with the given message id for the given subscriber.
    *
    * @param topic the topic to persist the message id
+   * @param subscriber the subscriber name
    * @param messageId the most recently processed message id
    */
-  void persistSubscriberState(String topic, String messageId);
+  void persistSubscriberState(String topic, String subscriber, String messageId);
 }

@@ -325,18 +325,19 @@ public class JobQueueDataset extends AbstractDataset implements JobQueue, TopicM
   }
 
   @Override
-  public String retrieveSubscriberState(String topic) {
-    Row row = table.get(getRowKey(topic));
+  public String retrieveSubscriberState(String topic, String subscriber) {
+    Row row = table.get(getRowKey(topic, subscriber));
     byte[] messageIdBytes = row.get(COL);
     return messageIdBytes == null ? null : Bytes.toString(messageIdBytes);
   }
 
   @Override
-  public void persistSubscriberState(String topic, String messageId) {
-    table.put(getRowKey(topic), COL, Bytes.toBytes(messageId));
+  public void persistSubscriberState(String topic, String subscriber, String messageId) {
+    table.put(getRowKey(topic, subscriber), COL, Bytes.toBytes(messageId));
   }
 
-  private byte[] getRowKey(String topic) {
+  private byte[] getRowKey(String topic, String subscriber) {
+    // For backward compatibility, the subscriber is not used
     return Bytes.concat(MESSAGE_ID_ROW_PREFIX, ROW_KEY_SEPARATOR, Bytes.toBytes(topic));
   }
 }

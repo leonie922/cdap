@@ -139,13 +139,13 @@ public class MetadataSubscriberService extends AbstractMessagingSubscriberServic
   @Override
   protected String loadMessageId(DatasetContext datasetContext) throws Exception {
     AppMetadataStore appMetadataStore = AppMetadataStore.create(cConf, datasetContext, datasetFramework);
-    return appMetadataStore.retrieveSubscriberState(getTopicId().getTopic());
+    return appMetadataStore.retrieveSubscriberState(getTopicId().getTopic(), "metadata.writer");
   }
 
   @Override
   protected void storeMessageId(DatasetContext datasetContext, String messageId) throws Exception {
     AppMetadataStore appMetadataStore = AppMetadataStore.create(cConf, datasetContext, datasetFramework);
-    appMetadataStore.persistSubscriberState(getTopicId().getTopic(), messageId);
+    appMetadataStore.persistSubscriberState(getTopicId().getTopic(), "metadata.writer", messageId);
   }
 
   @Override
