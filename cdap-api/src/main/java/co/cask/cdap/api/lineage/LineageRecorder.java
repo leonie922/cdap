@@ -17,6 +17,8 @@
 package co.cask.cdap.api.lineage;
 
 import co.cask.cdap.api.lineage.operation.Operation;
+import co.cask.cdap.api.lineage.operation.Read;
+import co.cask.cdap.api.lineage.operation.Write;
 
 import java.util.Collection;
 
@@ -26,7 +28,9 @@ import java.util.Collection;
 public interface LineageRecorder {
   /**
    * Record the lineage operations.
-   * @param operations the collection of operations to be recorded.
+   * @param operations the collection of operations to be recorded. All operations should have unique names.
+   *                   For completeness of the linage information, this collection should have at least
+   *                   one operation of type {@link Read} and one operation of type {@link Write}. 
    */
   void record(Collection<? extends Operation> operations);
 }

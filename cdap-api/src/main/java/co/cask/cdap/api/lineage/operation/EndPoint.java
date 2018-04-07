@@ -27,14 +27,23 @@ import javax.annotation.Nullable;
  * with the properties associated with it.
  */
 public class EndPoint {
-  private final String name;
   private final String namespace;
+  private final String name;
   private final Map<String, String> properties;
 
-  private EndPoint(String name, @Nullable String namespace, Map<String, String> properties) {
-    this.name = name;
+  private EndPoint(@Nullable String namespace, String name, Map<String, String> properties) {
     this.namespace = namespace;
+    this.name = name;
     this.properties = Collections.unmodifiableMap(new HashMap<>(properties));
+  }
+
+  /**
+   * @return the namespace name if it is explicitly provided while creating this EndPoint,
+   * otherwise {@code null} is returned
+   */
+  @Nullable
+  public String getNamespace() {
+    return namespace;
   }
 
   /**
@@ -52,34 +61,25 @@ public class EndPoint {
   }
 
   /**
-   * @return the namespace name if it is explicitly provided while creating this EndPoint,
-   * otherwise {@code null} is returned
-   */
-  @Nullable
-  public String getNamespace() {
-    return namespace;
-  }
-
-  /**
    * Return the EndPoint as defined by the provided name.
    * @param name the name of the EndPoint
    * @return the EndPoint
    */
   public static EndPoint of(String name) {
-    return of(name, null, Collections.emptyMap());
+    return of(null, name, Collections.emptyMap());
   }
 
   /**
    * Return the EndPoint as defined by the provided name.
-   * @param name the name of the EndPoint
    * @param namespace the name of the namespace. EndPoint is associated with the
    *                  namespace when it is non {@code null}, otherwise
    *                  the namespace in which program runs is considered as the
    *                  namespace for the EndPoint
+   * @param name the name of the EndPoint
    * @return the EndPoint
    */
-  public static EndPoint of(String name, @Nullable String namespace) {
-    return of(name, namespace, Collections.emptyMap());
+  public static EndPoint of(@Nullable String namespace, String name) {
+    return of(namespace, name, Collections.emptyMap());
   }
 
   /**
@@ -88,21 +88,21 @@ public class EndPoint {
    * @param properties the properties to be associated with the EndPoint for lineage purpose
    */
   public static EndPoint of(String name, Map<String, String> properties) {
-    return of(name, null, properties);
+    return of(null, name, properties);
   }
 
   /**
    * Return the EndPoint as defined by the provided name.
-   * @param name the name of the EndPoint
    * @param namespace the name of the namespace. EndPoint is associated with the
    *                  namespace when it is non {@code null}, otherwise
    *                  the namespace in which program runs is considered as the
    *                  namespace for the EndPoint
+   * @param name the name of the EndPoint
    * @param properties the properties to be associated with the EndPoint for lineage purpose
    * @return the EndPoint
    */
-  public static EndPoint of(String name, @Nullable String namespace, Map<String, String> properties) {
-    return new EndPoint(name, namespace, properties);
+  public static EndPoint of(@Nullable String namespace, String name, Map<String, String> properties) {
+    return new EndPoint(namespace, name, properties);
   }
 
   @Override
@@ -116,13 +116,13 @@ public class EndPoint {
 
     EndPoint that = (EndPoint) o;
 
-    return Objects.equals(name, that.name)
-      && Objects.equals(namespace, that.namespace)
+    return Objects.equals(namespace, that.namespace)
+      && Objects.equals(name, that.name)
       && Objects.equals(properties, that.properties);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, namespace, properties);
+    return Objects.hash(namespace, name, properties);
   }
 }

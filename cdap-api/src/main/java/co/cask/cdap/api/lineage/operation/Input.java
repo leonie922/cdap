@@ -16,18 +16,23 @@
 
 package co.cask.cdap.api.lineage.operation;
 
-import javax.annotation.Nullable;
-
 /**
  * Represent the input with name and the origin(operation) which created this input.
  */
 public class Input {
-  private final String name;
   private final String origin;
+  private final String name;
 
-  private Input(String name, @Nullable String origin) {
-    this.name = name;
+  private Input(String origin, String name) {
     this.origin = origin;
+    this.name = name;
+  }
+
+  /**
+   * @return the name of the operation which created this input
+   */
+  public String getOrigin() {
+    return origin;
   }
 
   /**
@@ -38,29 +43,12 @@ public class Input {
   }
 
   /**
-   * @return the name of the operation which created this input
-   */
-  @Nullable
-  public String getOrigin() {
-    return origin;
-  }
-
-  /**
    * Get the instance of an input.
-   * @param name the name associated with the input
-   * @return the {@link Input}
-   */
-  public static Input of(String name) {
-    return of(name, null);
-  }
-
-  /**
-   * Get the instance of an input.
-   * @param name the associated with the input
    * @param origin the name of the operation which created this input
+   * @param name the associated with the input
    * @return the {@link Input}
    */
-  public static Input of(String name, @Nullable String origin) {
-    return new Input(name, origin);
+  public static Input of(String origin, String name) {
+    return new Input(origin, name);
   }
 }

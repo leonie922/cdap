@@ -22,37 +22,37 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Represents merge between multiple operation. Outputs of merge operation
- * are implicit and is union of outputs of all the operations that are being merged.
+ * Represents merge between multiple origins(operations). Outputs of merge operation
+ * are implicit and is union of outputs of all the origins that are being merged.
  */
 public class Merge extends Operation {
-  private final Set<String> operations;
+  private final Set<String> origins;
 
   /**
    * Create instance of merge operation
    * @param name the name of the merge operation
    * @param description the description of the merge operation
-   * @param operations the array of name of operations to be merge
+   * @param origins the array of name of operations to be merge
    */
-  public Merge(String name, String description, String ... operations) {
-    this(name, description, new HashSet<>(Arrays.asList(operations)));
+  public Merge(String name, String description, String ... origins) {
+    this(name, description, new HashSet<>(Arrays.asList(origins)));
   }
 
   /**
    * Create instance of merge operation
    * @param name the name of the merge operation
    * @param description the description of the merge operation
-   * @param operations the set of name of operations to be merge
+   * @param origins the set of name of operations to be merge
    */
-  public Merge(String name, String description, Set<String> operations) {
+  public Merge(String name, String description, Set<String> origins) {
     super(name, Type.MERGE, description);
-    this.operations = Collections.unmodifiableSet(new HashSet<>(operations));
+    this.origins = Collections.unmodifiableSet(new HashSet<>(origins));
   }
 
   /**
    * @return the set of name of operations to be merged
    */
-  public Set<String> getOperations() {
-    return operations;
+  public Set<String> getOrigins() {
+    return origins;
   }
 }
