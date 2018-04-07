@@ -230,7 +230,7 @@ public class MetadataSubscriberService extends AbstractMessagingSubscriberServic
       DatasetUsage usage = message.getPayload(GSON, DatasetUsage.class);
       if (usage.getDatasetId() != null) {
         usageDataset.register(usage.getProgramId(), usage.getDatasetId());
-      } else if (usage.getDatasetId() != null) {
+      } else if (usage.getStreamId() != null) {
         usageDataset.register(usage.getProgramId(), usage.getStreamId());
       } else {
         // This shouldn't happen

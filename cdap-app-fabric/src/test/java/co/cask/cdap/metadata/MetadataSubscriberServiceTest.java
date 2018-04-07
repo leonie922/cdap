@@ -31,6 +31,7 @@ import co.cask.cdap.data2.registry.UsageWriter;
 import co.cask.cdap.internal.app.services.http.AppFabricTestBase;
 import co.cask.cdap.proto.ProgramType;
 import co.cask.cdap.proto.id.DatasetId;
+import co.cask.cdap.proto.id.EntityId;
 import co.cask.cdap.proto.id.FlowletId;
 import co.cask.cdap.proto.id.NamespaceId;
 import co.cask.cdap.proto.id.NamespacedEntityId;
@@ -114,15 +115,15 @@ public class MetadataSubscriberServiceTest extends AppFabricTestBase {
       Assert.assertTrue(lineageReader.getRelations(spark1, 0L, Long.MAX_VALUE, x -> true).isEmpty());
 
       // Verifies usage has been written
-      Set<DatasetId> expectedUsage = new HashSet<>(Arrays.asList(dataset1, dataset3));
+      Set<EntityId> expectedUsage = new HashSet<>(Arrays.asList(dataset1, dataset3));
       Tasks.waitFor(true, () -> expectedUsage.equals(usageRegistry.getDatasets(spark1)),
                     10, TimeUnit.SECONDS, 100, TimeUnit.MILLISECONDS);
 
       // Emit one more usage
-      usageWriter.register(flow1, dataset2);
+      usageWriter.register(flow1, stream1);
       expectedUsage.clear();
-      expectedUsage.add(dataset2);
-      Tasks.waitFor(true, () -> expectedUsage.equals(usageRegistry.getDatasets(flow1)),
+      expectedUsage.add(stream1);
+      Tasks.waitFor(true, () -> expectedUsage.equals(usageRegistry.getStreams(flow1)),
                     10, TimeUnit.SECONDS, 100, TimeUnit.MILLISECONDS);
 
     } finally {

@@ -21,7 +21,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
 /**
- * A container for messages send to the metadata topic configured by {@link Constants.Metadata#MESSAGING_TOPIC}.
+ * A container for messages in the metadata topic configured by {@link Constants.Metadata#MESSAGING_TOPIC}.
  * It carries the message type and the payload as {@link JsonElement}.
  */
 public final class MetadataMessage {

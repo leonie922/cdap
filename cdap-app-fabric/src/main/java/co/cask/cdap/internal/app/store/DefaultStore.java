@@ -712,7 +712,7 @@ public class DefaultStore implements Store {
    * Method to add version in DefaultStore.
    *
    * @throws InterruptedException if the thread is interrupted
-   * @throws IOException if there exception when trying to access the AppMetadataStore
+   * @throws IOException if failed to access the AppMetadataStore
    * @throws DatasetManagementException if failed to instantiate the AppMetadataStore
    */
   public void upgrade() throws InterruptedException, IOException, DatasetManagementException {
