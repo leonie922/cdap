@@ -52,8 +52,6 @@ import co.cask.cdap.explore.executor.ExploreExecutorService;
 import co.cask.cdap.explore.guice.ExploreClientModule;
 import co.cask.cdap.explore.guice.ExploreRuntimeModule;
 import co.cask.cdap.explore.service.ExploreServiceUtils;
-import co.cask.cdap.gateway.handlers.meta.RemoteSystemOperationsService;
-import co.cask.cdap.gateway.handlers.meta.RemoteSystemOperationsServiceModule;
 import co.cask.cdap.gateway.router.NettyRouter;
 import co.cask.cdap.gateway.router.RouterModules;
 import co.cask.cdap.internal.app.services.AppFabricServer;
@@ -130,7 +128,6 @@ public class StandaloneMain {
   private final TrackerAppCreationService trackerAppCreationService;
   private final WranglerAppCreationService wranglerAppCreationService;
   private final AuthorizerInstantiator authorizerInstantiator;
-  private final RemoteSystemOperationsService remoteSystemOperationsService;
   private final MessagingService messagingService;
   private final OperationalStatsService operationalStatsService;
 
@@ -185,7 +182,6 @@ public class StandaloneMain {
 
     exploreClient = injector.getInstance(ExploreClient.class);
     metadataService = injector.getInstance(MetadataService.class);
-    remoteSystemOperationsService = injector.getInstance(RemoteSystemOperationsService.class);
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
@@ -266,7 +262,6 @@ public class StandaloneMain {
     }
 
     wranglerAppCreationService.startAndWait();
-    remoteSystemOperationsService.startAndWait();
 
     operationalStatsService.startAndWait();
 
@@ -300,7 +295,6 @@ public class StandaloneMain {
 
       operationalStatsService.stopAndWait();
 
-      remoteSystemOperationsService.stopAndWait();
       // now the stream writer and the explore service (they need tx)
       streamService.stopAndWait();
       if (exploreExecutorService != null) {
@@ -488,7 +482,6 @@ public class StandaloneMain {
       new StreamAdminModules().getStandaloneModules(),
       new NamespaceStoreModule().getStandaloneModules(),
       new MetadataServiceModule(),
-      new RemoteSystemOperationsServiceModule(),
       new AuditModule().getStandaloneModules(),
       new AuthorizationModule(),
       new AuthorizationEnforcementModule().getStandaloneModules(),

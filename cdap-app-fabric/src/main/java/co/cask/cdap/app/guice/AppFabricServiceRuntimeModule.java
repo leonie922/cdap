@@ -22,7 +22,6 @@ import co.cask.cdap.app.deploy.ManagerFactory;
 import co.cask.cdap.app.mapreduce.DistributedMRJobInfoFetcher;
 import co.cask.cdap.app.mapreduce.LocalMRJobInfoFetcher;
 import co.cask.cdap.app.mapreduce.MRJobInfoFetcher;
-import co.cask.cdap.app.store.RuntimeStore;
 import co.cask.cdap.app.store.Store;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
@@ -83,6 +82,8 @@ import co.cask.cdap.internal.app.runtime.schedule.LocalTimeSchedulerService;
 import co.cask.cdap.internal.app.runtime.schedule.TimeSchedulerService;
 import co.cask.cdap.internal.app.runtime.schedule.store.DatasetBasedTimeScheduleStore;
 import co.cask.cdap.internal.app.runtime.schedule.store.TriggerMisfireLogger;
+import co.cask.cdap.internal.app.runtime.workflow.BasicWorkflowStateWriter;
+import co.cask.cdap.internal.app.runtime.workflow.WorkflowStateWriter;
 import co.cask.cdap.internal.app.services.AppFabricServer;
 import co.cask.cdap.internal.app.services.DistributedRunRecordCorrectorService;
 import co.cask.cdap.internal.app.services.LocalRunRecordCorrectorService;
@@ -369,8 +370,10 @@ public final class AppFabricServiceRuntimeModule extends RuntimeModule {
       datasetModuleBinder.addBinding("app-fabric").toInstance(new AppFabricDatasetModule());
 
       bind(Store.class).to(DefaultStore.class);
-      // we can simply use DefaultStore for RuntimeStore, when its not running in a separate container
-      bind(RuntimeStore.class).to(DefaultStore.class);
+
+      // In App-Fabric, we can write directly, hence bind to the basic implementation
+      bind(WorkflowStateWriter.class).to(BasicWorkflowStateWriter.class);
+
       bind(ArtifactStore.class).in(Scopes.SINGLETON);
       bind(ProfileStore.class).in(Scopes.SINGLETON);
       bind(ProgramLifecycleService.class).in(Scopes.SINGLETON);
