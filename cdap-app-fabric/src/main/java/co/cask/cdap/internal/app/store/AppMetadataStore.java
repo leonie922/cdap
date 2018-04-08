@@ -36,7 +36,6 @@ import co.cask.cdap.data2.dataset2.lib.table.MDSKey;
 import co.cask.cdap.data2.dataset2.lib.table.MetadataStoreDataset;
 import co.cask.cdap.internal.app.ApplicationSpecificationAdapter;
 import co.cask.cdap.internal.app.runtime.ProgramOptionConstants;
-import co.cask.cdap.internal.app.runtime.messaging.TopicMessageIdStore;
 import co.cask.cdap.internal.app.runtime.workflow.BasicWorkflowToken;
 import co.cask.cdap.proto.BasicThrowable;
 import co.cask.cdap.proto.NamespaceMeta;
@@ -100,7 +99,7 @@ import javax.annotation.Nullable;
  * Workflow node state is updated whenever program state is updated
  * and we notice that the program belongs to a workflow.
  */
-public class AppMetadataStore extends MetadataStoreDataset implements TopicMessageIdStore {
+public class AppMetadataStore extends MetadataStoreDataset {
 
   static final DatasetId APP_META_INSTANCE_ID = NamespaceId.SYSTEM.dataset(Constants.AppMetaStore.TABLE);
 
@@ -1278,8 +1277,15 @@ public class AppMetadataStore extends MetadataStoreDataset implements TopicMessa
     }
   }
 
+  /**
+   * Gets the id of the last fetched message that was set for a subscriber of the given TMS topic
+   *
+   * @param topic the topic to lookup the last message id
+   * @param subscriber the subscriber name
+   * @return the id of the last fetched message for this subscriber on this topic,
+   *         or {@code null} if no message id was stored before
+   */
   @Nullable
-  @Override
   public String retrieveSubscriberState(String topic, String subscriber) {
     MDSKey.Builder keyBuilder = new MDSKey.Builder().add(TYPE_MESSAGE).add(topic);
 
@@ -1292,7 +1298,13 @@ public class AppMetadataStore extends MetadataStoreDataset implements TopicMessa
     return (rawBytes == null) ? null : Bytes.toString(rawBytes);
   }
 
-  @Override
+  /**
+   * Updates the given topic's last fetched message id with the given message id for the given subscriber.
+   *
+   * @param topic the topic to persist the message id
+   * @param subscriber the subscriber name
+   * @param messageId the most recently processed message id
+   */
   public void persistSubscriberState(String topic, String subscriber, String messageId) {
     MDSKey.Builder keyBuilder = new MDSKey.Builder().add(TYPE_MESSAGE).add(topic);
 

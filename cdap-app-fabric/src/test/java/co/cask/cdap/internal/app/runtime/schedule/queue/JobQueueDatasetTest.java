@@ -149,7 +149,7 @@ public class JobQueueDatasetTest {
     DatasetsUtil.createIfNotExists(datasetFramework, Schedulers.JOB_QUEUE_DATASET_ID,
                                    JobQueueDataset.class.getName(), DatasetProperties.EMPTY);
 
-    jobQueue = datasetFramework.getDataset(Schedulers.JOB_QUEUE_DATASET_ID, new HashMap<String, String>(), null);
+    jobQueue = datasetFramework.getDataset(Schedulers.JOB_QUEUE_DATASET_ID, new HashMap<>(), null);
     txExecutor = new DynamicTransactionExecutorFactory(new InMemoryTxSystemClient(txManager))
       .createExecutor(Collections.<TransactionAware>singleton(jobQueue));
   }
@@ -181,14 +181,14 @@ public class JobQueueDatasetTest {
       @Override
       public void apply() throws Exception {
         // without first setting the message Id, a get will return null
-        Assert.assertNull(jobQueue.retrieveSubscriberState(topic1, ""));
+        Assert.assertNull(jobQueue.retrieveSubscriberState(topic1));
 
         // test set and get
-        jobQueue.persistSubscriberState(topic1, "", messageIdToPut);
-        Assert.assertEquals(messageIdToPut, jobQueue.retrieveSubscriberState(topic1, ""));
+        jobQueue.persistSubscriberState(topic1, messageIdToPut);
+        Assert.assertEquals(messageIdToPut, jobQueue.retrieveSubscriberState(topic1));
 
         // the message id for a different topic should still be null
-        Assert.assertNull(jobQueue.retrieveSubscriberState(topic2, ""));
+        Assert.assertNull(jobQueue.retrieveSubscriberState(topic2));
       }
     });
 
@@ -196,8 +196,8 @@ public class JobQueueDatasetTest {
       @Override
       public void apply() throws Exception {
         // the message Id should be retrievable across transactions
-        Assert.assertEquals(messageIdToPut, jobQueue.retrieveSubscriberState(topic1, ""));
-        Assert.assertNull(jobQueue.retrieveSubscriberState(topic2, ""));
+        Assert.assertEquals(messageIdToPut, jobQueue.retrieveSubscriberState(topic1));
+        Assert.assertNull(jobQueue.retrieveSubscriberState(topic2));
       }
     });
   }
@@ -278,7 +278,7 @@ public class JobQueueDatasetTest {
         // should be 0 jobs in the JobQueue to begin with
         Assert.assertEquals(0, getAllJobs(jobQueue).size());
 
-        jobQueue.persistSubscriberState("someTopic", "", "someMessageId");
+        jobQueue.persistSubscriberState("someTopic", "someMessageId");
 
         // put a job for SCHED1, and check that it is in 'getJobs' and 'getJobsForSchedule'
         jobQueue.put(SCHED1_JOB);

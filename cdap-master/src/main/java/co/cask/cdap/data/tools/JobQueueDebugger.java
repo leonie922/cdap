@@ -193,7 +193,7 @@ public class JobQueueDebugger extends AbstractIdleService {
         List<String> topics = ImmutableList.of(cConf.get(Constants.Scheduler.TIME_EVENT_TOPIC),
                                                cConf.get(Constants.Dataset.DATA_EVENT_TOPIC));
         for (String topic : topics) {
-          String messageIdString = jobQueue.retrieveSubscriberState(topic, "");
+          String messageIdString = jobQueue.retrieveSubscriberState(topic);
           String publishTimestampString = messageIdString == null ? "n/a" :
             Long.toString(new MessageId(Bytes.fromHexString(messageIdString)).getPublishTimestamp());
           System.out.println(String.format("Topic: %s, Publish Timestamp: %s", topic, publishTimestampString));
