@@ -16,6 +16,7 @@
 
 package co.cask.cdap.metadata;
 
+import co.cask.cdap.api.metadata.MetadataEntity;
 import co.cask.cdap.api.metadata.MetadataScope;
 import co.cask.cdap.common.BadRequestException;
 import co.cask.cdap.common.NotFoundException;
@@ -31,6 +32,7 @@ import co.cask.cdap.proto.element.EntityTypeSimpleName;
 import co.cask.cdap.proto.id.ApplicationId;
 import co.cask.cdap.proto.id.ArtifactId;
 import co.cask.cdap.proto.id.DatasetId;
+import co.cask.cdap.proto.id.EntityId;
 import co.cask.cdap.proto.id.NamespacedEntityId;
 import co.cask.cdap.proto.id.ProgramId;
 import co.cask.cdap.proto.id.StreamId;
@@ -41,7 +43,6 @@ import co.cask.http.HttpResponder;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -63,6 +64,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -85,12 +87,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   private static final Type SET_METADATA_RECORD_TYPE = new TypeToken<Set<MetadataRecord>>() { }.getType();
 
   private static final Function<String, EntityTypeSimpleName> STRING_TO_TARGET_TYPE =
-    new Function<String, EntityTypeSimpleName>() {
-      @Override
-      public EntityTypeSimpleName apply(String input) {
-        return EntityTypeSimpleName.valueOf(input.toUpperCase());
-      }
-    };
+    input -> EntityTypeSimpleName.valueOf(input.toUpperCase());
 
   private final MetadataAdmin metadataAdmin;
 
@@ -234,9 +231,9 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void addAppProperties(FullHttpRequest request, HttpResponder responder,
                                @PathParam("namespace-id") String namespaceId,
                                @PathParam("app-id") String appId) throws BadRequestException, NotFoundException {
-    ApplicationId app = new ApplicationId(namespaceId, appId);
+    MetadataEntity app = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId);
     metadataAdmin.addProperties(app, readMetadata(request));
-    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " + app);
+    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " + EntityId.fromMetadataEntity(app));
   }
 
   @POST
@@ -247,9 +244,11 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                     @PathParam("artifact-name") String artifactName,
                                     @PathParam("artifact-version") String artifactVersionStr)
     throws BadRequestException, NotFoundException {
-    ArtifactId artifactId = new ArtifactId(namespaceId, artifactName, artifactVersionStr);
-    metadataAdmin.addProperties(artifactId, readMetadata(request));
-    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " + artifactId);
+    MetadataEntity artifact = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.ARTIFACT, artifactName)
+      .append(MetadataEntity.VERSION, artifactVersionStr);
+    metadataAdmin.addProperties(artifact, readMetadata(request));
+    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " +
+      EntityId.fromMetadataEntity(artifact));
   }
 
   @POST
@@ -261,9 +260,12 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                    @PathParam("program-type") String programType,
                                    @PathParam("program-id") String programId)
     throws BadRequestException, NotFoundException {
-    ProgramId program = new ProgramId(namespaceId, appId, ProgramType.valueOfCategoryName(programType), programId);
+    MetadataEntity program = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId)
+      .append(MetadataEntity.TYPE, ProgramType.valueOfCategoryName(programType).name()).append(MetadataEntity.PROGRAM,
+                                                                                         programId);
     metadataAdmin.addProperties(program, readMetadata(request));
-    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " + program);
+    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " +
+      EntityId.fromMetadataEntity(program));
   }
 
   @POST
@@ -273,9 +275,10 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                    @PathParam("namespace-id") String namespaceId,
                                    @PathParam("dataset-id") String datasetId)
     throws BadRequestException, NotFoundException {
-    DatasetId dataset = new DatasetId(namespaceId, datasetId);
+    MetadataEntity dataset = MetadataEntity.ofDataset(namespaceId, datasetId);
     metadataAdmin.addProperties(dataset, readMetadata(request));
-    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " + dataset);
+    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " +
+      EntityId.fromMetadataEntity(dataset));
   }
 
   @POST
@@ -285,9 +288,10 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                   @PathParam("namespace-id") String namespaceId,
                                   @PathParam("stream-id") String streamId)
     throws BadRequestException, NotFoundException {
-    StreamId stream = new StreamId(namespaceId, streamId);
+    MetadataEntity stream = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId);
     metadataAdmin.addProperties(stream, readMetadata(request));
-    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " + stream);
+    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " +
+      EntityId.fromMetadataEntity(stream));
   }
 
   @POST
@@ -297,9 +301,10 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                 @PathParam("namespace-id") String namespaceId,
                                 @PathParam("stream-id") String streamId,
                                 @PathParam("view-id") String viewId) throws NotFoundException, BadRequestException {
-    StreamViewId view = new StreamViewId(namespaceId, streamId, viewId);
+    MetadataEntity view = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId).append
+      (MetadataEntity.VIEW, viewId);
     metadataAdmin.addProperties(view, readMetadata(request));
-    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " + view);
+    responder.sendString(HttpResponseStatus.OK, "Metadata added successfully to " + EntityId.fromMetadataEntity(view));
   }
 
   @DELETE
@@ -307,10 +312,10 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void removeAppMetadata(HttpRequest request, HttpResponder responder,
                                 @PathParam("namespace-id") String namespaceId,
                                 @PathParam("app-id") String appId) throws NotFoundException {
-    ApplicationId app = new ApplicationId(namespaceId, appId);
+    MetadataEntity app = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId);
     metadataAdmin.removeMetadata(app);
     responder.sendString(HttpResponseStatus.OK,
-                         String.format("Metadata for app %s deleted successfully.", app));
+                         String.format("Metadata for app %s deleted successfully.", EntityId.fromMetadataEntity(app)));
   }
 
   @DELETE
@@ -320,7 +325,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                     @PathParam("artifact-name") String artifactName,
                                     @PathParam("artifact-version") String artifactVersionStr) throws NotFoundException {
     ArtifactId artifactId = new ArtifactId(namespaceId, artifactName, artifactVersionStr);
-    metadataAdmin.removeMetadata(artifactId);
+    metadataAdmin.removeMetadata(artifactId.toMetadataEntity());
     responder.sendJson(HttpResponseStatus.OK,
                        String.format("Metadata for artifact %s deleted successfully.", artifactId));
   }
@@ -332,7 +337,9 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                     @PathParam("app-id") String appId,
                                     @PathParam("program-type") String programType,
                                     @PathParam("program-id") String programId) throws NotFoundException {
-    ProgramId program = new ProgramId(namespaceId, appId, ProgramType.valueOfCategoryName(programType), programId);
+    MetadataEntity program = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId)
+      .append(MetadataEntity.TYPE, ProgramType.valueOfCategoryName(programType).name())
+      .append(MetadataEntity.PROGRAM, programId);
     metadataAdmin.removeMetadata(program);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata for program %s deleted successfully.", program));
@@ -343,7 +350,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void removeDatasetMetadata(HttpRequest request, HttpResponder responder,
                                     @PathParam("namespace-id") String namespaceId,
                                     @PathParam("dataset-id") String datasetId) throws NotFoundException {
-    DatasetId dataset = new DatasetId(namespaceId, datasetId);
+    MetadataEntity dataset = MetadataEntity.ofDataset(namespaceId, datasetId);
     metadataAdmin.removeMetadata(dataset);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata for dataset %s deleted successfully.", dataset));
@@ -354,7 +361,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void removeStreamMetadata(HttpRequest request, HttpResponder responder,
                                    @PathParam("namespace-id") String namespaceId,
                                    @PathParam("stream-id") String streamId) throws NotFoundException {
-    StreamId stream = new StreamId(namespaceId, streamId);
+    MetadataEntity stream = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId);
     metadataAdmin.removeMetadata(stream);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata for stream %s deleted successfully.", stream));
@@ -366,7 +373,8 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                    @PathParam("namespace-id") String namespaceId,
                                    @PathParam("stream-id") String streamId,
                                    @PathParam("view-id") String viewId) throws NotFoundException {
-    StreamViewId view = new StreamViewId(namespaceId, streamId, viewId);
+    MetadataEntity view = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId).append
+      (MetadataEntity.VIEW, viewId);
     metadataAdmin.removeMetadata(view);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata for view %s deleted successfully.", view));
@@ -377,10 +385,11 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void removeAppProperties(HttpRequest request, HttpResponder responder,
                                   @PathParam("namespace-id") String namespaceId,
                                   @PathParam("app-id") String appId) throws NotFoundException {
-    ApplicationId app = new ApplicationId(namespaceId, appId);
+    MetadataEntity app = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId);
     metadataAdmin.removeProperties(app);
     responder.sendString(HttpResponseStatus.OK,
-                         String.format("Metadata properties for app %s deleted successfully.", app));
+                         String.format("Metadata properties for app %s deleted successfully.",
+                                       EntityId.fromMetadataEntity(app)));
   }
 
   @DELETE
@@ -389,10 +398,11 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                 @PathParam("namespace-id") String namespaceId,
                                 @PathParam("app-id") String appId,
                                 @PathParam("property") String property) throws NotFoundException {
-    ApplicationId app = new ApplicationId(namespaceId, appId);
+    MetadataEntity app = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId);
     metadataAdmin.removeProperties(app, property);
     responder.sendString(HttpResponseStatus.OK,
-                         String.format("Metadata property %s for app %s deleted successfully.", property, app));
+                         String.format("Metadata property %s for app %s deleted successfully.", property,
+                                       EntityId.fromMetadataEntity(app)));
   }
 
   @DELETE
@@ -402,10 +412,12 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                        @PathParam("artifact-name") String artifactName,
                                        @PathParam("artifact-version") String artifactVersionStr)
     throws NotFoundException {
-    ArtifactId artifactId = new ArtifactId(namespaceId, artifactName, artifactVersionStr);
-    metadataAdmin.removeProperties(artifactId);
+    MetadataEntity artifact = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.ARTIFACT, artifactName)
+      .append(MetadataEntity.VERSION, artifactVersionStr);
+    metadataAdmin.removeProperties(artifact);
     responder.sendJson(HttpResponseStatus.OK,
-                       String.format("Metadata properties for artifact %s deleted successfully.", artifactId));
+                       String.format("Metadata properties for artifact %s deleted successfully.",
+                                     EntityId.fromMetadataEntity(artifact)));
   }
 
   @DELETE
@@ -416,11 +428,12 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                      @PathParam("artifact-name") String artifactName,
                                      @PathParam("artifact-version") String artifactVersionStr,
                                      @PathParam("property") String property) throws NotFoundException {
-    ArtifactId artifactId = new ArtifactId(namespaceId, artifactName, artifactVersionStr);
-    metadataAdmin.removeProperties(artifactId, property);
+    MetadataEntity artifact = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.ARTIFACT, artifactName)
+      .append(MetadataEntity.VERSION, artifactVersionStr);
+    metadataAdmin.removeProperties(artifact, property);
     responder.sendJson(HttpResponseStatus.OK,
                        String.format("Metadata property %s for  artifact %s deleted successfully.",
-                                     property, artifactId));
+                                     property, EntityId.fromMetadataEntity(artifact)));
   }
 
   @DELETE
@@ -430,7 +443,9 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                       @PathParam("app-id") String appId,
                                       @PathParam("program-type") String programType,
                                       @PathParam("program-id") String programId) throws NotFoundException {
-    ProgramId program = new ProgramId(namespaceId, appId, ProgramType.valueOfCategoryName(programType), programId);
+    MetadataEntity program = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId)
+      .append(MetadataEntity.TYPE, ProgramType.valueOfCategoryName(programType).name())
+      .append(MetadataEntity.PROGRAM, programId);
     metadataAdmin.removeProperties(program);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata properties for program %s deleted successfully.", program));
@@ -444,7 +459,9 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                     @PathParam("program-type") String programType,
                                     @PathParam("program-id") String programId,
                                     @PathParam("property") String property) throws NotFoundException {
-    ProgramId program = new ProgramId(namespaceId, appId, ProgramType.valueOfCategoryName(programType), programId);
+    MetadataEntity program = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId)
+      .append(MetadataEntity.TYPE, ProgramType.valueOfCategoryName(programType).name())
+      .append(MetadataEntity.PROGRAM, programId);
     metadataAdmin.removeProperties(program, property);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata property %s for program %s deleted successfully.", property, program));
@@ -455,7 +472,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void removeDatasetProperties(HttpRequest request, HttpResponder responder,
                                       @PathParam("namespace-id") String namespaceId,
                                       @PathParam("dataset-id") String datasetId) throws NotFoundException {
-    DatasetId dataset = new DatasetId(namespaceId, datasetId);
+    MetadataEntity dataset = MetadataEntity.ofDataset(namespaceId, datasetId);
     metadataAdmin.removeProperties(dataset);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata properties for dataset %s deleted successfully.", dataset));
@@ -467,7 +484,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                     @PathParam("namespace-id") String namespaceId,
                                     @PathParam("dataset-id") String datasetId,
                                     @PathParam("property") String property) throws NotFoundException {
-    DatasetId dataset = new DatasetId(namespaceId, datasetId);
+    MetadataEntity dataset = MetadataEntity.ofDataset(namespaceId, datasetId);
     metadataAdmin.removeProperties(dataset, property);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata property %s for dataset %s deleted successfully.", property, dataset));
@@ -478,7 +495,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void removeStreamProperties(HttpRequest request, HttpResponder responder,
                                      @PathParam("namespace-id") String namespaceId,
                                      @PathParam("stream-id") String streamId) throws NotFoundException {
-    StreamId stream = new StreamId(namespaceId, streamId);
+    MetadataEntity stream = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId);
     metadataAdmin.removeProperties(stream);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata properties for stream %s deleted successfully.", stream));
@@ -490,7 +507,8 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                       @PathParam("namespace-id") String namespaceId,
                                       @PathParam("stream-id") String streamId,
                                       @PathParam("view-id") String viewId) throws NotFoundException {
-    StreamViewId view = new StreamViewId(namespaceId, streamId, viewId);
+    MetadataEntity view = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId).append
+      (MetadataEntity.VIEW, viewId);
     metadataAdmin.removeProperties(view);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata properties for view %s deleted successfully.", view));
@@ -502,7 +520,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                    @PathParam("namespace-id") String namespaceId,
                                    @PathParam("stream-id") String streamId,
                                    @PathParam("property") String property) throws NotFoundException {
-    StreamId stream = new StreamId(namespaceId, streamId);
+    MetadataEntity stream = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId);
     metadataAdmin.removeProperties(stream, property);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata property %s for stream %s deleted successfully.", property, stream));
@@ -515,7 +533,8 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                  @PathParam("stream-id") String streamId,
                                  @PathParam("view-id") String viewId,
                                  @PathParam("property") String property) throws NotFoundException {
-    StreamViewId view = new StreamViewId(namespaceId, streamId, viewId);
+    MetadataEntity view = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId).append
+      (MetadataEntity.VIEW, viewId);
     metadataAdmin.removeProperties(view, property);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Metadata property %s for view %s deleted successfully.", property, view));
@@ -527,7 +546,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void addAppTags(FullHttpRequest request, HttpResponder responder,
                          @PathParam("namespace-id") String namespaceId,
                          @PathParam("app-id") String appId) throws BadRequestException, NotFoundException {
-    ApplicationId app = new ApplicationId(namespaceId, appId);
+    MetadataEntity app = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId);
     metadataAdmin.addTags(app, readArray(request));
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Added tags to application %s successfully.", app));
@@ -541,10 +560,11 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                               @PathParam("artifact-name") String artifactName,
                               @PathParam("artifact-version") String artifactVersionStr)
     throws BadRequestException, NotFoundException {
-    ArtifactId artifactId = new ArtifactId(namespaceId, artifactName, artifactVersionStr);
-    metadataAdmin.addTags(artifactId, readArray(request));
+    MetadataEntity artifact = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.ARTIFACT, artifactName)
+      .append(MetadataEntity.VERSION, artifactVersionStr);
+    metadataAdmin.addTags(artifact, readArray(request));
     responder.sendJson(HttpResponseStatus.OK,
-                       String.format("Added tags to artifact %s successfully.", artifactId));
+                       String.format("Added tags to artifact %s successfully.", EntityId.fromMetadataEntity(artifact)));
   }
 
   @POST
@@ -555,7 +575,9 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                              @PathParam("app-id") String appId,
                              @PathParam("program-type") String programType,
                              @PathParam("program-id") String programId) throws BadRequestException, NotFoundException {
-    ProgramId program = new ProgramId(namespaceId, appId, ProgramType.valueOfCategoryName(programType), programId);
+    MetadataEntity program = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId)
+      .append(MetadataEntity.TYPE, ProgramType.valueOfCategoryName(programType).name())
+      .append(MetadataEntity.PROGRAM, programId);
     metadataAdmin.addTags(program, readArray(request));
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Added tags to program %s successfully.", program));
@@ -567,7 +589,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void addDatasetTags(FullHttpRequest request, HttpResponder responder,
                             @PathParam("namespace-id") String namespaceId,
                             @PathParam("dataset-id") String datasetId) throws BadRequestException, NotFoundException {
-    DatasetId dataset = new DatasetId(namespaceId, datasetId);
+    MetadataEntity dataset = MetadataEntity.ofDataset(namespaceId, datasetId);
     metadataAdmin.addTags(dataset, readArray(request));
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Added tags to dataset %s successfully.", dataset));
@@ -579,7 +601,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void addStreamTags(FullHttpRequest request, HttpResponder responder,
                             @PathParam("namespace-id") String namespaceId,
                             @PathParam("stream-id") String streamId) throws BadRequestException, NotFoundException {
-    StreamId stream = new StreamId(namespaceId, streamId);
+    MetadataEntity stream = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId);
     metadataAdmin.addTags(stream, readArray(request));
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Added tags to stream %s successfully.", stream));
@@ -592,7 +614,8 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                             @PathParam("namespace-id") String namespaceId,
                             @PathParam("stream-id") String streamId,
                             @PathParam("view-id") String viewId) throws NotFoundException, BadRequestException {
-    StreamViewId view = new StreamViewId(namespaceId, streamId, viewId);
+    MetadataEntity view = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId).append
+      (MetadataEntity.VIEW, viewId);
     metadataAdmin.addTags(view, readArray(request));
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Added tags to view %s successfully", view));
@@ -668,7 +691,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void removeAppTags(HttpRequest request, HttpResponder responder,
                             @PathParam("namespace-id") String namespaceId,
                             @PathParam("app-id") String appId) throws NotFoundException {
-    ApplicationId app = new ApplicationId(namespaceId, appId);
+    MetadataEntity app = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId);
     metadataAdmin.removeTags(app);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Tags for app %s deleted successfully.", app));
@@ -680,7 +703,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                            @PathParam("namespace-id") String namespaceId,
                            @PathParam("app-id") String appId,
                            @PathParam("tag") String tag) throws NotFoundException {
-    ApplicationId app = new ApplicationId(namespaceId, appId);
+    MetadataEntity app = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId);
     metadataAdmin.removeTags(app, tag);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Tag %s for app %s deleted successfully.", tag, app));
@@ -692,10 +715,12 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                  @PathParam("namespace-id") String namespaceId,
                                  @PathParam("artifact-name") String artifactName,
                                  @PathParam("artifact-version") String artifactVersionStr) throws NotFoundException {
-    ArtifactId artifactId = new ArtifactId(namespaceId, artifactName, artifactVersionStr);
-    metadataAdmin.removeTags(artifactId);
+    MetadataEntity artifact = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.ARTIFACT, artifactName)
+      .append(MetadataEntity.VERSION, artifactVersionStr);
+    metadataAdmin.removeTags(artifact);
     responder.sendString(HttpResponseStatus.OK,
-                         String.format("Tags for artifact %s deleted successfully.", artifactId));
+                         String.format("Tags for artifact %s deleted successfully.",
+                                       EntityId.fromMetadataEntity(artifact)));
   }
 
   @DELETE
@@ -705,10 +730,12 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                 @PathParam("artifact-name") String artifactName,
                                 @PathParam("artifact-version") String artifactVersionStr,
                                 @PathParam("tag") String tag) throws NotFoundException {
-    ArtifactId artifactId = new ArtifactId(namespaceId, artifactName, artifactVersionStr);
-    metadataAdmin.removeTags(artifactId, tag);
+    MetadataEntity artifact = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.ARTIFACT, artifactName)
+      .append(MetadataEntity.VERSION, artifactVersionStr);
+    metadataAdmin.removeTags(artifact, tag);
     responder.sendString(HttpResponseStatus.OK,
-                         String.format("Tags %s for artifact %s deleted successfully.", tag, artifactId));
+                         String.format("Tags %s for artifact %s deleted successfully.", tag,
+                                       EntityId.fromMetadataEntity(artifact)));
   }
 
   @DELETE
@@ -718,7 +745,9 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                 @PathParam("app-id") String appId,
                                 @PathParam("program-type") String programType,
                                 @PathParam("program-id") String programId) throws NotFoundException {
-    ProgramId program = new ProgramId(namespaceId, appId, ProgramType.valueOfCategoryName(programType), programId);
+    MetadataEntity program = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId)
+      .append(MetadataEntity.TYPE, ProgramType.valueOfCategoryName(programType).name())
+      .append(MetadataEntity.PROGRAM, programId);
     metadataAdmin.removeTags(program);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Tags for program %s deleted successfully.", program));
@@ -732,7 +761,9 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                @PathParam("program-type") String programType,
                                @PathParam("program-id") String programId,
                                @PathParam("tag") String tag) throws NotFoundException {
-    ProgramId program = new ProgramId(namespaceId, appId, ProgramType.valueOfCategoryName(programType), programId);
+    MetadataEntity program = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.APPLICATION, appId)
+      .append(MetadataEntity.TYPE, ProgramType.valueOfCategoryName(programType).name())
+      .append(MetadataEntity.PROGRAM, programId);
     metadataAdmin.removeTags(program, tag);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Tag %s for program %s deleted successfully.", tag, program));
@@ -743,7 +774,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void removeDatasetTags(HttpRequest request, HttpResponder responder,
                                 @PathParam("namespace-id") String namespaceId,
                                 @PathParam("dataset-id") String datasetId) throws NotFoundException {
-    DatasetId dataset = new DatasetId(namespaceId, datasetId);
+    MetadataEntity dataset = MetadataEntity.ofDataset(namespaceId, datasetId);
     
     metadataAdmin.removeTags(dataset);
     responder.sendString(HttpResponseStatus.OK,
@@ -756,7 +787,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                @PathParam("namespace-id") String namespaceId,
                                @PathParam("dataset-id") String datasetId,
                                @PathParam("tag") String tag) throws NotFoundException {
-    DatasetId dataset = new DatasetId(namespaceId, datasetId);
+    MetadataEntity dataset = MetadataEntity.ofDataset(namespaceId, datasetId);
     metadataAdmin.removeTags(dataset, tag);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Tag %s for dataset %s deleted successfully.", tag, dataset));
@@ -767,7 +798,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   public void removeStreamTags(HttpRequest request, HttpResponder responder,
                                @PathParam("namespace-id") String namespaceId,
                                @PathParam("stream-id") String streamId) throws NotFoundException {
-    StreamId stream = new StreamId(namespaceId, streamId);
+    MetadataEntity stream = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId);
     metadataAdmin.removeTags(stream);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Tags for stream %s deleted successfully.", stream));
@@ -779,7 +810,8 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                                @PathParam("namespace-id") String namespaceId,
                                @PathParam("stream-id") String streamId,
                                @PathParam("view-id") String viewId) throws NotFoundException {
-    StreamViewId view = new StreamViewId(namespaceId, streamId, viewId);
+    MetadataEntity view = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId).append
+      (MetadataEntity.VIEW, viewId);
     metadataAdmin.removeTags(view);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Tags for view %s deleted successfully.", view));
@@ -791,7 +823,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                               @PathParam("namespace-id") String namespaceId,
                               @PathParam("stream-id") String streamId,
                               @PathParam("tag") String tag) throws NotFoundException {
-    StreamId stream = new StreamId(namespaceId, streamId);
+    MetadataEntity stream = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId);
     metadataAdmin.removeTags(stream, tag);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Tag %s for stream %s deleted successfully.", tag, stream));
@@ -804,7 +836,8 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
                               @PathParam("stream-id") String streamId,
                               @PathParam("view-id") String viewId,
                               @PathParam("tag") String tag) throws NotFoundException {
-    StreamViewId view = new StreamViewId(namespaceId, streamId, viewId);
+    MetadataEntity view = MetadataEntity.ofNamespace(namespaceId).append(MetadataEntity.STREAM, streamId).append
+      (MetadataEntity.VIEW, viewId);
     metadataAdmin.removeTags(view, tag);
     responder.sendString(HttpResponseStatus.OK,
                          String.format("Tag %s for view %s deleted successfully.", tag, view));
@@ -867,7 +900,7 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
     }
     Set<EntityTypeSimpleName> types = Collections.emptySet();
     if (targets != null) {
-      types = ImmutableSet.copyOf(Iterables.transform(targets, STRING_TO_TARGET_TYPE));
+      types = ImmutableSet.copyOf(targets.stream().map(STRING_TO_TARGET_TYPE::apply).collect(Collectors.toList()));
     }
     SortInfo sortInfo = SortInfo.of(URLDecoder.decode(sort, "UTF-8"));
     if (SortInfo.DEFAULT.equals(sortInfo)) {
@@ -892,22 +925,22 @@ public class MetadataHttpHandler extends AbstractHttpHandler {
   private Set<MetadataRecord> getMetadata(NamespacedEntityId namespacedEntityId,
                                           @Nullable String scope) throws NotFoundException, BadRequestException {
     return  (scope == null) ?
-      metadataAdmin.getMetadata(namespacedEntityId) :
-      metadataAdmin.getMetadata(validateScope(scope), namespacedEntityId);
+      metadataAdmin.getMetadata(namespacedEntityId.toMetadataEntity()) :
+      metadataAdmin.getMetadata(validateScope(scope), namespacedEntityId.toMetadataEntity());
   }
 
   private Map<String, String> getProperties(NamespacedEntityId namespacedEntityId,
                                             @Nullable String scope) throws NotFoundException, BadRequestException {
     return  (scope == null) ?
-      metadataAdmin.getProperties(namespacedEntityId) :
-      metadataAdmin.getProperties(validateScope(scope), namespacedEntityId);
+      metadataAdmin.getProperties(namespacedEntityId.toMetadataEntity()) :
+      metadataAdmin.getProperties(validateScope(scope), namespacedEntityId.toMetadataEntity());
   }
 
   private Set<String> getTags(NamespacedEntityId namespacedEntityId,
                               @Nullable String scope) throws NotFoundException, BadRequestException {
     return  (scope == null) ?
-      metadataAdmin.getTags(namespacedEntityId) :
-      metadataAdmin.getTags(validateScope(scope), namespacedEntityId);
+      metadataAdmin.getTags(namespacedEntityId.toMetadataEntity()) :
+      metadataAdmin.getTags(validateScope(scope), namespacedEntityId.toMetadataEntity());
   }
 
   private MetadataScope validateScope(String scope) throws BadRequestException {

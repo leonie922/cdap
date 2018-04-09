@@ -101,8 +101,8 @@ public class AbstractSystemMetadataWriterTest {
                                          AbstractSystemMetadataWriter.DESCRIPTION_KEY, "description1",
                                          AbstractSystemMetadataWriter.CREATION_TIME_KEY, String.valueOf(123456L),
                                          AbstractSystemMetadataWriter.TTL_KEY, "100"),
-                         ImmutableSet.<String>of());
-    Assert.assertEquals(expected, store.getMetadata(MetadataScope.SYSTEM, dsInstance));
+                         ImmutableSet.of());
+    Assert.assertEquals(expected, store.getMetadata(MetadataScope.SYSTEM, dsInstance.toMetadataEntity()));
 
     // Now remove TTL, and add dsType
     datasetSystemMetadataWriter =
@@ -115,9 +115,9 @@ public class AbstractSystemMetadataWriterTest {
                                          AbstractSystemMetadataWriter.DESCRIPTION_KEY, "description2",
                                          AbstractSystemMetadataWriter.CREATION_TIME_KEY, String.valueOf(123456L),
                                          DatasetSystemMetadataWriter.TYPE, "dsType"),
-                         ImmutableSet.<String>of());
-    Assert.assertEquals(expected, store.getMetadata(MetadataScope.SYSTEM, dsInstance));
+                         ImmutableSet.of());
+    Assert.assertEquals(expected, store.getMetadata(MetadataScope.SYSTEM, dsInstance.toMetadataEntity()));
 
-    store.removeMetadata(dsInstance);
+    store.removeMetadata(dsInstance.toMetadataEntity());
   }
 }

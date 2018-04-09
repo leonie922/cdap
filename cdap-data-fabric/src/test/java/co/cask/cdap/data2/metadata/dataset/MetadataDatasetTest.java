@@ -19,6 +19,7 @@ import co.cask.cdap.api.data.schema.Schema;
 import co.cask.cdap.api.dataset.DatasetAdmin;
 import co.cask.cdap.api.dataset.DatasetProperties;
 import co.cask.cdap.api.dataset.table.Scanner;
+import co.cask.cdap.api.metadata.MetadataEntity;
 import co.cask.cdap.api.metadata.MetadataScope;
 import co.cask.cdap.common.BadRequestException;
 import co.cask.cdap.data2.datafabric.dataset.DatasetsUtil;
@@ -33,7 +34,6 @@ import co.cask.cdap.proto.id.ApplicationId;
 import co.cask.cdap.proto.id.ArtifactId;
 import co.cask.cdap.proto.id.DatasetId;
 import co.cask.cdap.proto.id.NamespaceId;
-import co.cask.cdap.proto.id.NamespacedEntityId;
 import co.cask.cdap.proto.id.ProgramId;
 import co.cask.cdap.proto.id.StreamId;
 import co.cask.cdap.proto.id.StreamViewId;
@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Test class for {@link MetadataDataset} class.
  */
-public class MetadataDatasetTest {
+public class  MetadataDatasetTest {
 
   @ClassRule
   public static DatasetFrameworkTestUtil dsFrameworkUtil = new DatasetFrameworkTestUtil();
@@ -73,14 +73,14 @@ public class MetadataDatasetTest {
   private MetadataDataset dataset;
   private TransactionExecutor txnl;
 
-  private final ApplicationId app1 = new ApplicationId("ns1", "app1");
-  private final ApplicationId appNs2 = new ApplicationId("ns2", "app1");
+  private final MetadataEntity app1 = new ApplicationId("ns1", "app1").toMetadataEntity();
+  private final MetadataEntity appNs2 = new ApplicationId("ns2", "app1").toMetadataEntity();
   // Have to use Id.Program for comparison here because the MetadataDataset APIs return Id.Program.
-  private final ProgramId flow1 = new ProgramId("ns1", "app1", ProgramType.FLOW, "flow1");
-  private final DatasetId dataset1 = new DatasetId("ns1", "ds1");
-  private final StreamId stream1 = new StreamId("ns1", "s1");
-  private final StreamViewId view1 = new StreamViewId(stream1.getNamespace(), stream1.getStream(), "v1");
-  private final ArtifactId artifact1 = new ArtifactId("ns1", "a1", "1.0.0");
+  private final MetadataEntity flow1 = new ProgramId("ns1", "app1", ProgramType.FLOW, "flow1").toMetadataEntity();
+  private final MetadataEntity dataset1 = new DatasetId("ns1", "ds1").toMetadataEntity();
+  private final MetadataEntity stream1 = new StreamId("ns1", "s1").toMetadataEntity();
+  private final MetadataEntity view1 = new StreamViewId("ns1", "s1", "v1").toMetadataEntity();
+  private final MetadataEntity artifact1 = new ArtifactId("ns1", "a1", "1.0.0").toMetadataEntity();
 
   @Before
   public void before() throws Exception {
@@ -618,8 +618,8 @@ public class MetadataDatasetTest {
   @Test
   public void testSearchIncludesSystemEntities() throws InterruptedException, TransactionFailureException {
     // Use the same artifact in two different namespaces - system and ns2
-    final ArtifactId sysArtifact = NamespaceId.SYSTEM.artifact("artifact", "1.0");
-    final ArtifactId ns2Artifact = new ArtifactId("ns2", "artifact", "1.0");
+    final MetadataEntity sysArtifact = NamespaceId.SYSTEM.artifact("artifact", "1.0").toMetadataEntity();
+    final MetadataEntity ns2Artifact = new ArtifactId("ns2", "artifact", "1.0").toMetadataEntity();
     final String multiWordKey = "multiword";
     final String multiWordValue = "aV1 av2 ,  -  ,  av3 - av4_av5 av6";
 
@@ -680,8 +680,8 @@ public class MetadataDatasetTest {
 
   @Test
   public void testSearchDifferentEntityScope() throws InterruptedException, TransactionFailureException {
-    final ArtifactId sysArtifact = NamespaceId.SYSTEM.artifact("artifact", "1.0");
-    final ArtifactId nsArtifact = new ArtifactId("ns1", "artifact", "1.0");
+    final MetadataEntity sysArtifact = NamespaceId.SYSTEM.artifact("artifact", "1.0").toMetadataEntity();
+    final MetadataEntity nsArtifact = new ArtifactId("ns1", "artifact", "1.0").toMetadataEntity();
     final String multiWordKey = "multiword";
     final String multiWordValue = "aV1 av2 ,  -  ,  av3 - av4_av5 av6";
 
@@ -741,13 +741,13 @@ public class MetadataDatasetTest {
       @Override
       public void apply() throws Exception {
         Assert.assertEquals(ImmutableList.of(new MetadataEntry(flow1, "key1", "value1")),
-                            searchByDefaultIndex(flow1.getNamespace(), "value1",
+                            searchByDefaultIndex(flow1.getValue(MetadataEntity.NAMESPACE), "value1",
                                                  ImmutableSet.<EntityTypeSimpleName>of()));
         Assert.assertEquals(ImmutableList.of(new MetadataEntry(flow1, "key2", "value2")),
-                            searchByDefaultIndex(flow1.getNamespace(), "value2",
+                            searchByDefaultIndex(flow1.getValue(MetadataEntity.NAMESPACE), "value2",
                                                  ImmutableSet.<EntityTypeSimpleName>of()));
         Assert.assertEquals(ImmutableList.of(new MetadataEntry(flow1, MetadataDataset.TAGS_KEY, "tag1,tag2")),
-                            searchByDefaultIndex(flow1.getNamespace(), "tag2",
+                            searchByDefaultIndex(flow1.getValue(MetadataEntity.NAMESPACE), "tag2",
                                                  ImmutableSet.<EntityTypeSimpleName>of()));
       }
     });
@@ -767,24 +767,24 @@ public class MetadataDatasetTest {
       public void apply() throws Exception {
         // Searching for value1 should be empty
         Assert.assertEquals(ImmutableList.of(),
-                            searchByDefaultIndex(flow1.getNamespace(), "value1",
+                            searchByDefaultIndex(flow1.getValue(MetadataEntity.NAMESPACE), "value1",
                                                  ImmutableSet.<EntityTypeSimpleName>of()));
         // Instead key1 has value value3 now
         Assert.assertEquals(ImmutableList.of(new MetadataEntry(flow1, "key1", "value3")),
-                            searchByDefaultIndex(flow1.getNamespace(), "value3",
+                            searchByDefaultIndex(flow1.getValue(MetadataEntity.NAMESPACE), "value3",
                                                  ImmutableSet.<EntityTypeSimpleName>of()));
         // key2 was deleted
         Assert.assertEquals(ImmutableList.of(),
-                            searchByDefaultIndex(flow1.getNamespace(), "value2",
+                            searchByDefaultIndex(flow1.getValue(MetadataEntity.NAMESPACE), "value2",
                                                  ImmutableSet.<EntityTypeSimpleName>of()));
         // tag2 was deleted
         Assert.assertEquals(
           ImmutableList.of(),
-          searchByDefaultIndex(flow1.getNamespace(), "tag2", ImmutableSet.<EntityTypeSimpleName>of()))
+          searchByDefaultIndex(flow1.getValue(MetadataEntity.NAMESPACE), "tag2", ImmutableSet.of()))
         ;
         Assert.assertEquals(
           ImmutableList.of(new MetadataEntry(flow1, MetadataDataset.TAGS_KEY, "tag1")),
-          searchByDefaultIndex(flow1.getNamespace(), "tag1", ImmutableSet.<EntityTypeSimpleName>of())
+          searchByDefaultIndex(flow1.getValue(MetadataEntity.NAMESPACE), "tag1", ImmutableSet.of())
         );
       }
     });
@@ -792,7 +792,7 @@ public class MetadataDatasetTest {
 
   @Test
   public void testMultiGet() throws Exception {
-    final Map<NamespacedEntityId, Metadata> allMetadata = new HashMap<>();
+    final Map<MetadataEntity, Metadata> allMetadata = new HashMap<>();
     allMetadata.put(flow1, new Metadata(flow1,
                                         ImmutableMap.of("key1", "value1", "key2", "value2"),
                                         ImmutableSet.of("tag1", "tag2", "tag3")));
@@ -815,89 +815,75 @@ public class MetadataDatasetTest {
     txnl.execute(new TransactionExecutor.Subroutine() {
       @Override
       public void apply() throws Exception {
-        for (Map.Entry<NamespacedEntityId, Metadata> entry : allMetadata.entrySet()) {
+        for (Map.Entry<MetadataEntity, Metadata> entry : allMetadata.entrySet()) {
           Metadata metadata = entry.getValue();
           for (Map.Entry<String, String> props : metadata.getProperties().entrySet()) {
-            dataset.setProperty(metadata.getEntityId(), props.getKey(), props.getValue());
+            dataset.setProperty(metadata.getMetadataEntity(), props.getKey(), props.getValue());
           }
-          dataset.addTags(metadata.getEntityId(), metadata.getTags().toArray(new String[metadata.getTags().size()]));
+          dataset.addTags(metadata.getMetadataEntity(),
+                          metadata.getTags().toArray(new String[metadata.getTags().size()]));
         }
       }
     });
 
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        ImmutableSet<Metadata> expected =
-          ImmutableSet.<Metadata>builder()
-            .add(allMetadata.get(flow1))
-            .add(allMetadata.get(app1))
-            .build();
-        Assert.assertEquals(expected, dataset.getMetadata(ImmutableSet.of(flow1, app1)));
+    txnl.execute(() -> {
+      ImmutableSet<Metadata> expected =
+        ImmutableSet.<Metadata>builder()
+          .add(allMetadata.get(flow1))
+          .add(allMetadata.get(app1))
+          .build();
+      Assert.assertEquals(expected, dataset.getMetadata(ImmutableSet.of(flow1, app1)));
 
-        expected =
-          ImmutableSet.<Metadata>builder()
-            .add(allMetadata.get(view1))
-            .add(allMetadata.get(stream1))
-            .add(allMetadata.get(dataset1))
-            .add(allMetadata.get(artifact1))
-            .build();
-        Assert.assertEquals(expected, dataset.getMetadata(ImmutableSet.of(view1, stream1, dataset1, artifact1)));
+      expected =
+        ImmutableSet.<Metadata>builder()
+          .add(allMetadata.get(view1))
+          .add(allMetadata.get(stream1))
+          .add(allMetadata.get(dataset1))
+          .add(allMetadata.get(artifact1))
+          .build();
+      Assert.assertEquals(expected, dataset.getMetadata(ImmutableSet.of(view1, stream1, dataset1, artifact1)));
 
-        expected =
-          ImmutableSet.<Metadata>builder()
-            .add(allMetadata.get(artifact1))
-            .build();
-        Assert.assertEquals(expected, dataset.getMetadata(ImmutableSet.of(artifact1)));
+      expected =
+        ImmutableSet.<Metadata>builder()
+          .add(allMetadata.get(artifact1))
+          .build();
+      Assert.assertEquals(expected, dataset.getMetadata(ImmutableSet.of(artifact1)));
 
-        expected = ImmutableSet.of();
-        Assert.assertEquals(expected, dataset.getMetadata(ImmutableSet.<NamespacedEntityId>of()));
-      }
+      expected = ImmutableSet.of();
+      Assert.assertEquals(expected, dataset.getMetadata(ImmutableSet.of()));
     });
   }
 
   @Test
   public void testDelete() throws Exception {
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        dataset.setProperty(flow1, "key1", "value1");
-        dataset.setProperty(flow1, "key2", "value2");
-        dataset.addTags(flow1, "tag1", "tag2");
+    txnl.execute(() -> {
+      dataset.setProperty(flow1, "key1", "value1");
+      dataset.setProperty(flow1, "key2", "value2");
+      dataset.addTags(flow1, "tag1", "tag2");
 
-        dataset.setProperty(app1, "key10", "value10");
-        dataset.setProperty(app1, "key12", "value12");
-        dataset.addTags(app1, "tag11", "tag12");
-      }
+      dataset.setProperty(app1, "key10", "value10");
+      dataset.setProperty(app1, "key12", "value12");
+      dataset.addTags(app1, "tag11", "tag12");
     });
 
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        Assert.assertEquals(ImmutableMap.of("key1", "value1", "key2", "value2"), dataset.getProperties(flow1));
-        Assert.assertEquals(ImmutableSet.of("tag1", "tag2"), dataset.getTags(flow1));
-        Assert.assertEquals(ImmutableMap.of("key10", "value10", "key12", "value12"), dataset.getProperties(app1));
-        Assert.assertEquals(ImmutableSet.of("tag11", "tag12"), dataset.getTags(app1));
-      }
+    txnl.execute(() -> {
+      Assert.assertEquals(ImmutableMap.of("key1", "value1", "key2", "value2"), dataset.getProperties(flow1));
+      Assert.assertEquals(ImmutableSet.of("tag1", "tag2"), dataset.getTags(flow1));
+      Assert.assertEquals(ImmutableMap.of("key10", "value10", "key12", "value12"), dataset.getProperties(app1));
+      Assert.assertEquals(ImmutableSet.of("tag11", "tag12"), dataset.getTags(app1));
     });
 
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // Delete all tags for flow1, and delete all properties for app1
-        dataset.removeTags(flow1);
-        dataset.removeProperties(app1);
-      }
+    txnl.execute(() -> {
+      // Delete all tags for flow1, and delete all properties for app1
+      dataset.removeTags(flow1);
+      dataset.removeProperties(app1);
     });
 
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        Assert.assertEquals(ImmutableMap.of("key1", "value1", "key2", "value2"), dataset.getProperties(flow1));
-        Assert.assertEquals(ImmutableSet.of(), dataset.getTags(flow1));
-        Assert.assertEquals(ImmutableMap.of(), dataset.getProperties(app1));
-        Assert.assertEquals(ImmutableSet.of("tag11", "tag12"), dataset.getTags(app1));
-      }
+    txnl.execute(() -> {
+      Assert.assertEquals(ImmutableMap.of("key1", "value1", "key2", "value2"), dataset.getProperties(flow1));
+      Assert.assertEquals(ImmutableSet.of(), dataset.getTags(flow1));
+      Assert.assertEquals(ImmutableMap.of(), dataset.getProperties(app1));
+      Assert.assertEquals(ImmutableSet.of("tag11", "tag12"), dataset.getTags(app1));
     });
   }
 
@@ -917,78 +903,60 @@ public class MetadataDatasetTest {
     final MetadataDataset dataset =
       getDataset(DatasetFrameworkTestUtil.NAMESPACE_ID.dataset("testIndexRebuilding"));
     TransactionExecutor txnl = dsFrameworkUtil.newInMemoryTransactionExecutor((TransactionAware) dataset);
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        Indexer indexer = new ReversingIndexer();
-        dataset.setMetadata(new MetadataEntry(flow1, "flowKey", "flowValue"), Collections.singleton(indexer));
-        dataset.setMetadata(new MetadataEntry(dataset1, "datasetKey", "datasetValue"), Collections.singleton(indexer));
-      }
+    txnl.execute(() -> {
+      Indexer indexer = new ReversingIndexer();
+      dataset.setMetadata(new MetadataEntry(flow1, "flowKey", "flowValue"), Collections.singleton(indexer));
+      dataset.setMetadata(new MetadataEntry(dataset1, "datasetKey", "datasetValue"), Collections.singleton(indexer));
     });
-    final String namespaceId = flow1.getNamespace();
+    final String namespaceId = flow1.getValue(MetadataEntity.NAMESPACE);
     final Set<EntityTypeSimpleName> targetTypes = Collections.singleton(EntityTypeSimpleName.ALL);
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        List<MetadataEntry> searchResults = searchByDefaultIndex(dataset, namespaceId, "flowValue", targetTypes);
-        Assert.assertTrue(searchResults.isEmpty());
-        searchResults = searchByDefaultIndex(dataset, namespaceId, "flowKey:flow*", targetTypes);
-        Assert.assertTrue(searchResults.isEmpty());
-        searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetValue", targetTypes);
-        Assert.assertTrue(searchResults.isEmpty());
-        searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetKey:dataset*", targetTypes);
-        Assert.assertTrue(searchResults.isEmpty());
-      }
+    txnl.execute(() -> {
+      List<MetadataEntry> searchResults = searchByDefaultIndex(dataset, namespaceId, "flowValue", targetTypes);
+      Assert.assertTrue(searchResults.isEmpty());
+      searchResults = searchByDefaultIndex(dataset, namespaceId, "flowKey:flow*", targetTypes);
+      Assert.assertTrue(searchResults.isEmpty());
+      searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetValue", targetTypes);
+      Assert.assertTrue(searchResults.isEmpty());
+      searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetKey:dataset*", targetTypes);
+      Assert.assertTrue(searchResults.isEmpty());
     });
     final AtomicReference<byte[]> startRowKeyForNextBatch = new AtomicReference<>();
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // Re-build indexes. Now the default indexer should be used
-        startRowKeyForNextBatch.set(dataset.rebuildIndexes(null, 1));
-        Assert.assertNotNull(startRowKeyForNextBatch.get());
+    txnl.execute(() -> {
+      // Re-build indexes. Now the default indexer should be used
+      startRowKeyForNextBatch.set(dataset.rebuildIndexes(null, 1));
+      Assert.assertNotNull(startRowKeyForNextBatch.get());
+    });
+    txnl.execute(() -> {
+      List<MetadataEntry> flowSearchResults = searchByDefaultIndex(dataset, namespaceId, "flowValue", targetTypes);
+      List<MetadataEntry> dsSearchResults = searchByDefaultIndex(dataset, namespaceId, "datasetValue", targetTypes);
+      if (!flowSearchResults.isEmpty()) {
+        Assert.assertEquals(1, flowSearchResults.size());
+        flowSearchResults = searchByDefaultIndex(dataset, namespaceId, "flowKey:flow*", targetTypes);
+        Assert.assertEquals(1, flowSearchResults.size());
+        Assert.assertTrue(dsSearchResults.isEmpty());
+        dsSearchResults = searchByDefaultIndex(dataset, namespaceId, "datasetKey:dataset*", targetTypes);
+        Assert.assertTrue(dsSearchResults.isEmpty());
+      } else {
+        flowSearchResults = searchByDefaultIndex(dataset, namespaceId, "flowKey:flow*", targetTypes);
+        Assert.assertTrue(flowSearchResults.isEmpty());
+        Assert.assertEquals(1, dsSearchResults.size());
+        dsSearchResults = searchByDefaultIndex(dataset, namespaceId, "datasetKey:dataset*", targetTypes);
+        Assert.assertEquals(1, dsSearchResults.size());
       }
     });
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        List<MetadataEntry> flowSearchResults = searchByDefaultIndex(dataset, namespaceId, "flowValue", targetTypes);
-        List<MetadataEntry> dsSearchResults = searchByDefaultIndex(dataset, namespaceId, "datasetValue", targetTypes);
-        if (!flowSearchResults.isEmpty()) {
-          Assert.assertEquals(1, flowSearchResults.size());
-          flowSearchResults = searchByDefaultIndex(dataset, namespaceId, "flowKey:flow*", targetTypes);
-          Assert.assertEquals(1, flowSearchResults.size());
-          Assert.assertTrue(dsSearchResults.isEmpty());
-          dsSearchResults = searchByDefaultIndex(dataset, namespaceId, "datasetKey:dataset*", targetTypes);
-          Assert.assertTrue(dsSearchResults.isEmpty());
-        } else {
-          flowSearchResults = searchByDefaultIndex(dataset, namespaceId, "flowKey:flow*", targetTypes);
-          Assert.assertTrue(flowSearchResults.isEmpty());
-          Assert.assertEquals(1, dsSearchResults.size());
-          dsSearchResults = searchByDefaultIndex(dataset, namespaceId, "datasetKey:dataset*", targetTypes);
-          Assert.assertEquals(1, dsSearchResults.size());
-        }
-      }
+    txnl.execute(() -> {
+      startRowKeyForNextBatch.set(dataset.rebuildIndexes(startRowKeyForNextBatch.get(), 1));
+      Assert.assertNull(startRowKeyForNextBatch.get());
     });
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        startRowKeyForNextBatch.set(dataset.rebuildIndexes(startRowKeyForNextBatch.get(), 1));
-        Assert.assertNull(startRowKeyForNextBatch.get());
-      }
-    });
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        List<MetadataEntry> searchResults = searchByDefaultIndex(dataset, namespaceId, "flowValue", targetTypes);
-        Assert.assertEquals(1, searchResults.size());
-        searchResults = searchByDefaultIndex(dataset, namespaceId, "flowKey:flow*", targetTypes);
-        Assert.assertEquals(1, searchResults.size());
-        searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetValue", targetTypes);
-        Assert.assertEquals(1, searchResults.size());
-        searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetKey:dataset*", targetTypes);
-        Assert.assertEquals(1, searchResults.size());
-      }
+    txnl.execute(() -> {
+      List<MetadataEntry> searchResults = searchByDefaultIndex(dataset, namespaceId, "flowValue", targetTypes);
+      Assert.assertEquals(1, searchResults.size());
+      searchResults = searchByDefaultIndex(dataset, namespaceId, "flowKey:flow*", targetTypes);
+      Assert.assertEquals(1, searchResults.size());
+      searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetValue", targetTypes);
+      Assert.assertEquals(1, searchResults.size());
+      searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetKey:dataset*", targetTypes);
+      Assert.assertEquals(1, searchResults.size());
     });
   }
 
@@ -997,46 +965,30 @@ public class MetadataDatasetTest {
     final MetadataDataset dataset =
       getDataset(DatasetFrameworkTestUtil.NAMESPACE_ID.dataset("testIndexRebuilding"));
     TransactionExecutor txnl = dsFrameworkUtil.newInMemoryTransactionExecutor((TransactionAware) dataset);
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        dataset.setProperty(flow1, "flowKey", "flowValue");
-        dataset.setProperty(dataset1, "datasetKey", "datasetValue");
-      }
+    txnl.execute(() -> {
+      dataset.setProperty(flow1, "flowKey", "flowValue");
+      dataset.setProperty(dataset1, "datasetKey", "datasetValue");
     });
-    final String namespaceId = flow1.getNamespace();
+    final String namespaceId = flow1.getValue(MetadataEntity.NAMESPACE);
     final Set<EntityTypeSimpleName> targetTypes = Collections.singleton(EntityTypeSimpleName.ALL);
     final MetadataEntry expectedFlowEntry = new MetadataEntry(flow1, "flowKey", "flowValue");
     final MetadataEntry expectedDatasetEntry = new MetadataEntry(dataset1, "datasetKey", "datasetValue");
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        List<MetadataEntry> searchResults = searchByDefaultIndex(dataset, namespaceId, "flowValue", targetTypes);
-        Assert.assertEquals(ImmutableList.of(expectedFlowEntry), searchResults);
-        searchResults = searchByDefaultIndex(dataset, namespaceId, "flowKey:flow*", targetTypes);
-        Assert.assertEquals(ImmutableList.of(expectedFlowEntry), searchResults);
-        searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetValue", targetTypes);
-        Assert.assertEquals(ImmutableList.of(expectedDatasetEntry), searchResults);
-        searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetKey:dataset*", targetTypes);
-        Assert.assertEquals(ImmutableList.of(expectedDatasetEntry), searchResults);
-      }
+    txnl.execute(() -> {
+      List<MetadataEntry> searchResults = searchByDefaultIndex(dataset, namespaceId, "flowValue", targetTypes);
+      Assert.assertEquals(ImmutableList.of(expectedFlowEntry), searchResults);
+      searchResults = searchByDefaultIndex(dataset, namespaceId, "flowKey:flow*", targetTypes);
+      Assert.assertEquals(ImmutableList.of(expectedFlowEntry), searchResults);
+      searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetValue", targetTypes);
+      Assert.assertEquals(ImmutableList.of(expectedDatasetEntry), searchResults);
+      searchResults = searchByDefaultIndex(dataset, namespaceId, "datasetKey:dataset*", targetTypes);
+      Assert.assertEquals(ImmutableList.of(expectedDatasetEntry), searchResults);
     });
     // delete indexes
     // 4 indexes should have been deleted - flowValue, flowKey:flowValue, datasetValue, datasetKey:datasetValue
     for (int i = 0; i < 4; i++) {
-      txnl.execute(new TransactionExecutor.Subroutine() {
-        @Override
-        public void apply() throws Exception {
-          Assert.assertEquals(1, dataset.deleteAllIndexes(1));
-        }
-      });
+      txnl.execute(() -> Assert.assertEquals(1, dataset.deleteAllIndexes(1)));
     }
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        Assert.assertEquals(0, dataset.deleteAllIndexes(1));
-      }
-    });
+    txnl.execute(() -> Assert.assertEquals(0, dataset.deleteAllIndexes(1)));
   }
 
   @Test
@@ -1049,50 +1001,44 @@ public class MetadataDatasetTest {
     final String schema = Schema.recordOf("schema", Schema.Field.of(body, Schema.of(Schema.Type.BYTES))).toString();
     final String name = "dataset1";
     final long creationTime = System.currentTimeMillis();
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        dataset.setProperty(flow1, "key", value);
-        dataset.setProperty(flow1, AbstractSystemMetadataWriter.SCHEMA_KEY, schema);
-        dataset.setProperty(dataset1, AbstractSystemMetadataWriter.ENTITY_NAME_KEY, name);
-        dataset.setProperty(dataset1, AbstractSystemMetadataWriter.CREATION_TIME_KEY, String.valueOf(creationTime));
-      }
+    txnl.execute(() -> {
+      dataset.setProperty(flow1, "key", value);
+      dataset.setProperty(flow1, AbstractSystemMetadataWriter.SCHEMA_KEY, schema);
+      dataset.setProperty(dataset1, AbstractSystemMetadataWriter.ENTITY_NAME_KEY, name);
+      dataset.setProperty(dataset1, AbstractSystemMetadataWriter.CREATION_TIME_KEY, String.valueOf(creationTime));
     });
-    final String namespaceId = flow1.getNamespace();
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // entry with no special indexes
-        assertSingleIndex(dataset, MetadataDataset.DEFAULT_INDEX_COLUMN, namespaceId, value);
-        assertNoIndexes(dataset, MetadataDataset.ENTITY_NAME_INDEX_COLUMN, namespaceId, value);
-        assertNoIndexes(dataset, MetadataDataset.INVERTED_ENTITY_NAME_INDEX_COLUMN, namespaceId, value);
-        assertNoIndexes(dataset, MetadataDataset.CREATION_TIME_INDEX_COLUMN, namespaceId, value);
-        assertNoIndexes(dataset, MetadataDataset.INVERTED_CREATION_TIME_INDEX_COLUMN, namespaceId, value);
-        // entry with a schema
-        assertSingleIndex(dataset, MetadataDataset.DEFAULT_INDEX_COLUMN, namespaceId, body);
-        assertNoIndexes(dataset, MetadataDataset.ENTITY_NAME_INDEX_COLUMN, namespaceId, body);
-        assertNoIndexes(dataset, MetadataDataset.INVERTED_ENTITY_NAME_INDEX_COLUMN, namespaceId, body);
-        assertNoIndexes(dataset, MetadataDataset.CREATION_TIME_INDEX_COLUMN, namespaceId, body);
-        assertNoIndexes(dataset, MetadataDataset.INVERTED_CREATION_TIME_INDEX_COLUMN, namespaceId, body);
-        // entry with entity name
-        assertSingleIndex(dataset, MetadataDataset.DEFAULT_INDEX_COLUMN, namespaceId, name);
-        assertSingleIndex(dataset, MetadataDataset.ENTITY_NAME_INDEX_COLUMN, namespaceId, name);
-        assertNoIndexes(dataset, MetadataDataset.INVERTED_ENTITY_NAME_INDEX_COLUMN, namespaceId, name);
-        Indexer indexer = new InvertedValueIndexer();
-        String index = Iterables.getOnlyElement(indexer.getIndexes(new MetadataEntry(dataset1, "key", name)));
-        assertSingleIndex(dataset, MetadataDataset.INVERTED_ENTITY_NAME_INDEX_COLUMN, namespaceId, index.toLowerCase());
-        assertNoIndexes(dataset, MetadataDataset.CREATION_TIME_INDEX_COLUMN, namespaceId, name);
-        assertNoIndexes(dataset, MetadataDataset.INVERTED_CREATION_TIME_INDEX_COLUMN, namespaceId, name);
-        // entry with creation time
-        String time = String.valueOf(creationTime);
-        assertSingleIndex(dataset, MetadataDataset.DEFAULT_INDEX_COLUMN, namespaceId, time);
-        assertNoIndexes(dataset, MetadataDataset.ENTITY_NAME_INDEX_COLUMN, namespaceId, time);
-        assertNoIndexes(dataset, MetadataDataset.INVERTED_ENTITY_NAME_INDEX_COLUMN, namespaceId, time);
-        assertSingleIndex(dataset, MetadataDataset.CREATION_TIME_INDEX_COLUMN, namespaceId, time);
-        assertNoIndexes(dataset, MetadataDataset.INVERTED_CREATION_TIME_INDEX_COLUMN, namespaceId, time);
-        assertSingleIndex(dataset, MetadataDataset.INVERTED_CREATION_TIME_INDEX_COLUMN, namespaceId,
-                          String.valueOf(Long.MAX_VALUE - creationTime));
-      }
+    final String namespaceId = flow1.getValue(MetadataEntity.NAMESPACE);
+    txnl.execute(() -> {
+      // entry with no special indexes
+      assertSingleIndex(dataset, MetadataDataset.DEFAULT_INDEX_COLUMN, namespaceId, value);
+      assertNoIndexes(dataset, MetadataDataset.ENTITY_NAME_INDEX_COLUMN, namespaceId, value);
+      assertNoIndexes(dataset, MetadataDataset.INVERTED_ENTITY_NAME_INDEX_COLUMN, namespaceId, value);
+      assertNoIndexes(dataset, MetadataDataset.CREATION_TIME_INDEX_COLUMN, namespaceId, value);
+      assertNoIndexes(dataset, MetadataDataset.INVERTED_CREATION_TIME_INDEX_COLUMN, namespaceId, value);
+      // entry with a schema
+      assertSingleIndex(dataset, MetadataDataset.DEFAULT_INDEX_COLUMN, namespaceId, body);
+      assertNoIndexes(dataset, MetadataDataset.ENTITY_NAME_INDEX_COLUMN, namespaceId, body);
+      assertNoIndexes(dataset, MetadataDataset.INVERTED_ENTITY_NAME_INDEX_COLUMN, namespaceId, body);
+      assertNoIndexes(dataset, MetadataDataset.CREATION_TIME_INDEX_COLUMN, namespaceId, body);
+      assertNoIndexes(dataset, MetadataDataset.INVERTED_CREATION_TIME_INDEX_COLUMN, namespaceId, body);
+      // entry with entity name
+      assertSingleIndex(dataset, MetadataDataset.DEFAULT_INDEX_COLUMN, namespaceId, name);
+      assertSingleIndex(dataset, MetadataDataset.ENTITY_NAME_INDEX_COLUMN, namespaceId, name);
+      assertNoIndexes(dataset, MetadataDataset.INVERTED_ENTITY_NAME_INDEX_COLUMN, namespaceId, name);
+      Indexer indexer = new InvertedValueIndexer();
+      String index = Iterables.getOnlyElement(indexer.getIndexes(new MetadataEntry(dataset1, "key", name)));
+      assertSingleIndex(dataset, MetadataDataset.INVERTED_ENTITY_NAME_INDEX_COLUMN, namespaceId, index.toLowerCase());
+      assertNoIndexes(dataset, MetadataDataset.CREATION_TIME_INDEX_COLUMN, namespaceId, name);
+      assertNoIndexes(dataset, MetadataDataset.INVERTED_CREATION_TIME_INDEX_COLUMN, namespaceId, name);
+      // entry with creation time
+      String time = String.valueOf(creationTime);
+      assertSingleIndex(dataset, MetadataDataset.DEFAULT_INDEX_COLUMN, namespaceId, time);
+      assertNoIndexes(dataset, MetadataDataset.ENTITY_NAME_INDEX_COLUMN, namespaceId, time);
+      assertNoIndexes(dataset, MetadataDataset.INVERTED_ENTITY_NAME_INDEX_COLUMN, namespaceId, time);
+      assertSingleIndex(dataset, MetadataDataset.CREATION_TIME_INDEX_COLUMN, namespaceId, time);
+      assertNoIndexes(dataset, MetadataDataset.INVERTED_CREATION_TIME_INDEX_COLUMN, namespaceId, time);
+      assertSingleIndex(dataset, MetadataDataset.INVERTED_CREATION_TIME_INDEX_COLUMN, namespaceId,
+                        String.valueOf(Long.MAX_VALUE - creationTime));
     });
   }
 
@@ -1104,94 +1050,88 @@ public class MetadataDatasetTest {
     final String flowName = "name11";
     final String dsName = "name21 name22";
     final String appName = "name31 name32 name33";
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        dataset.setProperty(flow1, AbstractSystemMetadataWriter.ENTITY_NAME_KEY, flowName);
-        dataset.setProperty(dataset1, AbstractSystemMetadataWriter.ENTITY_NAME_KEY, dsName);
-        dataset.setProperty(app1, AbstractSystemMetadataWriter.ENTITY_NAME_KEY, appName);
-      }
+    txnl.execute(() -> {
+      dataset.setProperty(flow1, AbstractSystemMetadataWriter.ENTITY_NAME_KEY, flowName);
+      dataset.setProperty(dataset1, AbstractSystemMetadataWriter.ENTITY_NAME_KEY, dsName);
+      dataset.setProperty(app1, AbstractSystemMetadataWriter.ENTITY_NAME_KEY, appName);
     });
-    final String namespaceId = flow1.getNamespace();
+    final String namespaceId = flow1.getValue(MetadataEntity.NAMESPACE);
     final EnumSet<EntityTypeSimpleName> targets = EnumSet.allOf(EntityTypeSimpleName.class);
     final MetadataEntry flowEntry = new MetadataEntry(flow1, AbstractSystemMetadataWriter.ENTITY_NAME_KEY, flowName);
     final MetadataEntry dsEntry = new MetadataEntry(dataset1, AbstractSystemMetadataWriter.ENTITY_NAME_KEY, dsName);
     final MetadataEntry appEntry = new MetadataEntry(app1, AbstractSystemMetadataWriter.ENTITY_NAME_KEY, appName);
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // since no sort is to be performed by the dataset, we return all (ignore limit and offset)
-        SearchResults searchResults = dataset.search(namespaceId, "name*", targets, SortInfo.DEFAULT, 0, 3, 1, null,
-                                                     false, EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(
-          // since default indexer is used:
-          // 1 index for flow: 'name11'
-          // 3 indexes for dataset: 'name21', 'name21 name22', 'name22'
-          // 4 indexes for app: 'name31', 'name31 name32 name33', 'name32', 'name33'
-          ImmutableList.of(flowEntry, dsEntry, dsEntry, dsEntry, appEntry, appEntry, appEntry, appEntry),
-          searchResults.getResults()
-        );
-        // ascending sort by name. offset and limit should be respected.
-        SortInfo nameAsc = new SortInfo(AbstractSystemMetadataWriter.ENTITY_NAME_KEY, SortInfo.SortOrder.ASC);
-        // first 2 in ascending order
-        searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 0, 2, 0, null, false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry), searchResults.getResults());
-        // return 2 with offset 1 in ascending order
-        searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 1, 2, 0, null, false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry, appEntry), searchResults.getResults());
-        // descending sort by name. offset and filter should be respected.
-        SortInfo nameDesc = new SortInfo(AbstractSystemMetadataWriter.ENTITY_NAME_KEY, SortInfo.SortOrder.DESC);
-        // first 2 in descending order
-        searchResults = dataset.search(namespaceId, "*", targets, nameDesc, 0, 2, 0, null, false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(appEntry, dsEntry), searchResults.getResults());
-        // last 1 in descending order
-        searchResults = dataset.search(namespaceId, "*", targets, nameDesc, 2, 1, 0, null, false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(appEntry, dsEntry, flowEntry), searchResults.getResults());
-        searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 2, 0, 0, null, false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry), searchResults.getResults());
-        searchResults = dataset.search(namespaceId, "*", targets, nameDesc, 1, 0, 0, null, false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(appEntry), searchResults.getResults());
-        searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 4, 0, 0, null, false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry, appEntry), searchResults.getResults());
-        searchResults = dataset.search(namespaceId, "*", targets, nameDesc, 100, 0, 0, null, false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(appEntry, dsEntry, flowEntry), searchResults.getResults());
+    txnl.execute(() -> {
+      // since no sort is to be performed by the dataset, we return all (ignore limit and offset)
+      SearchResults searchResults = dataset.search(namespaceId, "name*", targets, SortInfo.DEFAULT, 0, 3, 1, null,
+                                                   false, EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(
+        // since default indexer is used:
+        // 1 index for flow: 'name11'
+        // 3 indexes for dataset: 'name21', 'name21 name22', 'name22'
+        // 4 indexes for app: 'name31', 'name31 name32 name33', 'name32', 'name33'
+        ImmutableList.of(flowEntry, dsEntry, dsEntry, dsEntry, appEntry, appEntry, appEntry, appEntry),
+        searchResults.getResults()
+      );
+      // ascending sort by name. offset and limit should be respected.
+      SortInfo nameAsc = new SortInfo(AbstractSystemMetadataWriter.ENTITY_NAME_KEY, SortInfo.SortOrder.ASC);
+      // first 2 in ascending order
+      searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 0, 2, 0, null, false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry), searchResults.getResults());
+      // return 2 with offset 1 in ascending order
+      searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 1, 2, 0, null, false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry, appEntry), searchResults.getResults());
+      // descending sort by name. offset and filter should be respected.
+      SortInfo nameDesc = new SortInfo(AbstractSystemMetadataWriter.ENTITY_NAME_KEY, SortInfo.SortOrder.DESC);
+      // first 2 in descending order
+      searchResults = dataset.search(namespaceId, "*", targets, nameDesc, 0, 2, 0, null, false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(appEntry, dsEntry), searchResults.getResults());
+      // last 1 in descending order
+      searchResults = dataset.search(namespaceId, "*", targets, nameDesc, 2, 1, 0, null, false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(appEntry, dsEntry, flowEntry), searchResults.getResults());
+      searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 2, 0, 0, null, false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry), searchResults.getResults());
+      searchResults = dataset.search(namespaceId, "*", targets, nameDesc, 1, 0, 0, null, false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(appEntry), searchResults.getResults());
+      searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 4, 0, 0, null, false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry, appEntry), searchResults.getResults());
+      searchResults = dataset.search(namespaceId, "*", targets, nameDesc, 100, 0, 0, null, false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(appEntry, dsEntry, flowEntry), searchResults.getResults());
 
-        // test cursors
-        searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 0, 1, 3, null, false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry, appEntry), searchResults.getResults());
-        Assert.assertEquals(ImmutableList.of(dsName, appName), searchResults.getCursors());
+      // test cursors
+      searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 0, 1, 3, null, false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry, appEntry), searchResults.getResults());
+      Assert.assertEquals(ImmutableList.of(dsName, appName), searchResults.getCursors());
 
-        searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 0, 1, 3, searchResults.getCursors().get(0),
-                                       false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(dsEntry, appEntry), searchResults.getResults());
-        Assert.assertEquals(ImmutableList.of(appName), searchResults.getCursors());
+      searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 0, 1, 3, searchResults.getCursors().get(0),
+                                     false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(dsEntry, appEntry), searchResults.getResults());
+      Assert.assertEquals(ImmutableList.of(appName), searchResults.getCursors());
 
-        searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 0, 1, 3, searchResults.getCursors().get(0),
-                                       false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(appEntry), searchResults.getResults());
-        Assert.assertEquals(ImmutableList.of(), searchResults.getCursors());
+      searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 0, 1, 3, searchResults.getCursors().get(0),
+                                     false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(appEntry), searchResults.getResults());
+      Assert.assertEquals(ImmutableList.of(), searchResults.getCursors());
 
-        searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 0, 2, 3, null, false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry, appEntry), searchResults.getResults());
-        Assert.assertEquals(ImmutableList.of(appName), searchResults.getCursors());
+      searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 0, 2, 3, null, false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry, appEntry), searchResults.getResults());
+      Assert.assertEquals(ImmutableList.of(appName), searchResults.getCursors());
 
-        searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 3, 1, 2, null, false,
-                                       EnumSet.allOf(EntityScope.class));
-        Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry, appEntry), searchResults.getResults());
-        Assert.assertEquals(ImmutableList.of(), searchResults.getCursors());
-      }
+      searchResults = dataset.search(namespaceId, "*", targets, nameAsc, 3, 1, 2, null, false,
+                                     EnumSet.allOf(EntityScope.class));
+      Assert.assertEquals(ImmutableList.of(flowEntry, dsEntry, appEntry), searchResults.getResults());
+      Assert.assertEquals(ImmutableList.of(), searchResults.getCursors());
     });
   }
 
@@ -1211,26 +1151,23 @@ public class MetadataDatasetTest {
     }
   }
 
-  private void doTestHistory(final MetadataDataset dataset, final NamespacedEntityId targetId, final String prefix)
+  private void doTestHistory(final MetadataDataset dataset, final MetadataEntity targetId, final String prefix)
     throws Exception {
     TransactionExecutor txnl = dsFrameworkUtil.newInMemoryTransactionExecutor((TransactionAware) dataset);
 
     // Metadata change history keyed by time in millis the change was made
     final Map<Long, Metadata> expected = new HashMap<>();
     // No history for targetId at the beginning
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        Metadata completeRecord = new Metadata(targetId);
-        expected.put(System.currentTimeMillis(), completeRecord);
-        // Get history for targetId, should be empty
-        Assert.assertEquals(ImmutableSet.of(completeRecord),
-                            dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), System.currentTimeMillis()));
-        // Also, the metadata itself should be equal to the last recorded snapshot
-        Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
-                                                                   System.currentTimeMillis())),
-                            new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
-      }
+    txnl.execute(() -> {
+      Metadata completeRecord = new Metadata(targetId);
+      expected.put(System.currentTimeMillis(), completeRecord);
+      // Get history for targetId, should be empty
+      Assert.assertEquals(ImmutableSet.of(completeRecord),
+                          dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), System.currentTimeMillis()));
+      // Also, the metadata itself should be equal to the last recorded snapshot
+      Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
+                                                                 System.currentTimeMillis())),
+                          new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
     });
 
     // Since the key to expected map is time in millis, sleep for a millisecond to make sure the key is distinct
@@ -1239,79 +1176,59 @@ public class MetadataDatasetTest {
     // Add first record
     final Metadata completeRecord =
       new Metadata(targetId, toProps(prefix, "k1", "v1"), toTags(prefix, "t1", "t2"));
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        addMetadataHistory(dataset, completeRecord);
-      }
-    });
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        long time = System.currentTimeMillis();
-        expected.put(time, completeRecord);
-        // Since this is the first record, history should be the same as what was added.
-        Assert.assertEquals(ImmutableSet.of(completeRecord),
-                            dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
-        // Also, the metadata itself should be equal to the last recorded snapshot
-        Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
-                                                                   System.currentTimeMillis())),
-                            new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
-      }
+    txnl.execute(() -> addMetadataHistory(dataset, completeRecord));
+    txnl.execute(() -> {
+      long time = System.currentTimeMillis();
+      expected.put(time, completeRecord);
+      // Since this is the first record, history should be the same as what was added.
+      Assert.assertEquals(ImmutableSet.of(completeRecord),
+                          dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
+      // Also, the metadata itself should be equal to the last recorded snapshot
+      Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
+                                                                 System.currentTimeMillis())),
+                          new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
     });
     TimeUnit.MILLISECONDS.sleep(1);
 
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // Add a new property and a tag
-        dataset.setProperty(targetId, prefix + "k2", "v2");
-        dataset.addTags(targetId, prefix + "t3");
-      }
+    txnl.execute(() -> {
+      // Add a new property and a tag
+      dataset.setProperty(targetId, prefix + "k2", "v2");
+      dataset.addTags(targetId, prefix + "t3");
     });
     // Save the complete metadata record at this point
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        Metadata completeRecord = new Metadata(targetId, toProps(prefix, "k1", "v1", "k2", "v2"),
-                                               toTags(prefix, "t1", "t2", "t3"));
-        long time = System.currentTimeMillis();
-        expected.put(time, completeRecord);
-        // Assert the history record with the change
-        Assert.assertEquals(ImmutableSet.of(completeRecord),
-                            dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
-        // Also, the metadata itself should be equal to the last recorded snapshot
-        Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
-                                                                   System.currentTimeMillis())),
-                            new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
-      }
+    txnl.execute(() -> {
+      Metadata completeRecord1 = new Metadata(targetId, toProps(prefix, "k1", "v1", "k2", "v2"),
+                                              toTags(prefix, "t1", "t2", "t3"));
+      long time = System.currentTimeMillis();
+      expected.put(time, completeRecord1);
+      // Assert the history record with the change
+      Assert.assertEquals(ImmutableSet.of(completeRecord1),
+                          dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
+      // Also, the metadata itself should be equal to the last recorded snapshot
+      Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
+                                                                 System.currentTimeMillis())),
+                          new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
     });
     TimeUnit.MILLISECONDS.sleep(1);
 
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // Add another property and a tag
-        dataset.setProperty(targetId, prefix + "k3", "v3");
-        dataset.addTags(targetId, prefix + "t4");
-      }
+    txnl.execute(() -> {
+      // Add another property and a tag
+      dataset.setProperty(targetId, prefix + "k3", "v3");
+      dataset.addTags(targetId, prefix + "t4");
     });
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // Save the complete metadata record at this point
-        Metadata completeRecord = new Metadata(targetId, toProps(prefix, "k1", "v1", "k2", "v2", "k3", "v3"),
+    txnl.execute(() -> {
+      // Save the complete metadata record at this point
+      Metadata completeRecord12 = new Metadata(targetId, toProps(prefix, "k1", "v1", "k2", "v2", "k3", "v3"),
                                                toTags(prefix, "t1", "t2", "t3", "t4"));
-        long time = System.currentTimeMillis();
-        expected.put(time, completeRecord);
-        // Assert the history record with the change
-        Assert.assertEquals(ImmutableSet.of(completeRecord),
-                            dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
-        // Also, the metadata itself should be equal to the last recorded snapshot
-        Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
-                                                                   System.currentTimeMillis())),
-                            new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
-      }
+      long time = System.currentTimeMillis();
+      expected.put(time, completeRecord12);
+      // Assert the history record with the change
+      Assert.assertEquals(ImmutableSet.of(completeRecord12),
+                          dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
+      // Also, the metadata itself should be equal to the last recorded snapshot
+      Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
+                                                                 System.currentTimeMillis())),
+                          new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
     });
     TimeUnit.MILLISECONDS.sleep(1);
 
@@ -1323,86 +1240,68 @@ public class MetadataDatasetTest {
         dataset.addTags(targetId, prefix + "t3");
       }
     });
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // Save the complete metadata record at this point
-        Metadata completeRecord = new Metadata(targetId, toProps(prefix, "k1", "v1", "k2", "v2", "k3", "v3"),
+    txnl.execute(() -> {
+      // Save the complete metadata record at this point
+      Metadata completeRecord13 = new Metadata(targetId, toProps(prefix, "k1", "v1", "k2", "v2", "k3", "v3"),
                                                toTags(prefix, "t1", "t2", "t3", "t4"));
-        long time = System.currentTimeMillis();
-        expected.put(time, completeRecord);
-        // Assert the history record with the change
-        Assert.assertEquals(ImmutableSet.of(completeRecord),
-                            dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
-        // Also, the metadata itself should be equal to the last recorded snapshot
-        Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
-                                                                   System.currentTimeMillis())),
-                            new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
-      }
+      long time = System.currentTimeMillis();
+      expected.put(time, completeRecord13);
+      // Assert the history record with the change
+      Assert.assertEquals(ImmutableSet.of(completeRecord13),
+                          dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
+      // Also, the metadata itself should be equal to the last recorded snapshot
+      Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
+                                                                 System.currentTimeMillis())),
+                          new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
     });
     TimeUnit.MILLISECONDS.sleep(1);
 
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // Remove a property and two tags
-        dataset.removeProperties(targetId, prefix + "k2");
-        dataset.removeTags(targetId, prefix + "t4");
-        dataset.removeTags(targetId, prefix + "t2");
-      }
+    txnl.execute(() -> {
+      // Remove a property and two tags
+      dataset.removeProperties(targetId, prefix + "k2");
+      dataset.removeTags(targetId, prefix + "t4");
+      dataset.removeTags(targetId, prefix + "t2");
     });
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // Save the complete metadata record at this point
-        Metadata completeRecord = new Metadata(targetId, toProps(prefix, "k1", "v1", "k3", "v3"),
+    txnl.execute(() -> {
+      // Save the complete metadata record at this point
+      Metadata completeRecord14 = new Metadata(targetId, toProps(prefix, "k1", "v1", "k3", "v3"),
                                                toTags(prefix, "t1", "t3"));
-        long time = System.currentTimeMillis();
-        expected.put(time, completeRecord);
-        // Assert the history record with the change
-        Assert.assertEquals(ImmutableSet.of(completeRecord),
-                            dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
-        // Also, the metadata itself should be equal to the last recorded snapshot
-        Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
-                                                                   System.currentTimeMillis())),
-                            new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
-      }
+      long time = System.currentTimeMillis();
+      expected.put(time, completeRecord14);
+      // Assert the history record with the change
+      Assert.assertEquals(ImmutableSet.of(completeRecord14),
+                          dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
+      // Also, the metadata itself should be equal to the last recorded snapshot
+      Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
+                                                                 System.currentTimeMillis())),
+                          new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
     });
     TimeUnit.MILLISECONDS.sleep(1);
 
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // Remove all properties and all tags
-        dataset.removeProperties(targetId);
-        dataset.removeTags(targetId);
-      }
+    txnl.execute(() -> {
+      // Remove all properties and all tags
+      dataset.removeProperties(targetId);
+      dataset.removeTags(targetId);
     });
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        // Save the complete metadata record at this point
-        Metadata completeRecord = new Metadata(targetId);
-        long time = System.currentTimeMillis();
-        expected.put(time, completeRecord);
-        // Assert the history record with the change
-        Assert.assertEquals(ImmutableSet.of(completeRecord),
-                            dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
-        // Also, the metadata itself should be equal to the last recorded snapshot
-        Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
-                                                                   System.currentTimeMillis())),
-                            new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
-      }
+    txnl.execute(() -> {
+      // Save the complete metadata record at this point
+      Metadata completeRecord15 = new Metadata(targetId);
+      long time = System.currentTimeMillis();
+      expected.put(time, completeRecord15);
+      // Assert the history record with the change
+      Assert.assertEquals(ImmutableSet.of(completeRecord15),
+                          dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), time));
+      // Also, the metadata itself should be equal to the last recorded snapshot
+      Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
+                                                                 System.currentTimeMillis())),
+                          new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
     });
     TimeUnit.MILLISECONDS.sleep(1);
 
     // Add one more property and a tag
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        dataset.setProperty(targetId, prefix + "k2", "v2");
-        dataset.addTags(targetId, prefix + "t2");
-      }
+    txnl.execute(() -> {
+      dataset.setProperty(targetId, prefix + "k2", "v2");
+      dataset.addTags(targetId, prefix + "t2");
     });
     final Metadata lastCompleteRecord = new Metadata(targetId, toProps(prefix, "k2", "v2"),
                                                      toTags(prefix, "t2"));
@@ -1424,30 +1323,27 @@ public class MetadataDatasetTest {
     TimeUnit.MILLISECONDS.sleep(1);
 
     // Now assert all history
-    txnl.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        for (Map.Entry<Long, Metadata> entry : expected.entrySet()) {
-          Assert.assertEquals(entry.getValue(),
-                              getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), entry.getKey())));
-        }
-        // Asserting for current time should give the latest record
-        Assert.assertEquals(ImmutableSet.of(lastCompleteRecord),
-                            dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), System.currentTimeMillis()));
-        // Also, the metadata itself should be equal to the last recorded snapshot
-        Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
-                                                                   System.currentTimeMillis())),
-                            new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
+    txnl.execute(() -> {
+      for (Map.Entry<Long, Metadata> entry : expected.entrySet()) {
+        Assert.assertEquals(entry.getValue(),
+                            getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), entry.getKey())));
       }
+      // Asserting for current time should give the latest record
+      Assert.assertEquals(ImmutableSet.of(lastCompleteRecord),
+                          dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId), System.currentTimeMillis()));
+      // Also, the metadata itself should be equal to the last recorded snapshot
+      Assert.assertEquals(getFirst(dataset.getSnapshotBeforeTime(ImmutableSet.of(targetId),
+                                                                 System.currentTimeMillis())),
+                          new Metadata(targetId, dataset.getProperties(targetId), dataset.getTags(targetId)));
     });
   }
 
   private void addMetadataHistory(MetadataDataset dataset, Metadata record) {
     for (Map.Entry<String, String> entry : record.getProperties().entrySet()) {
-      dataset.setProperty(record.getEntityId(), entry.getKey(), entry.getValue());
+      dataset.setProperty(record.getMetadataEntity(), entry.getKey(), entry.getValue());
     }
     //noinspection ToArrayCallWithZeroLengthArrayArgument
-    dataset.addTags(record.getEntityId(), record.getTags().toArray(new String[0]));
+    dataset.addTags(record.getMetadataEntity(), record.getTags().toArray(new String[0]));
   }
 
   private Map<String, String> toProps(String prefix, String k1, String v1) {

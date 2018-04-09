@@ -126,7 +126,7 @@ public class MetadataHttpHandlerTestRun extends MetadataTestBase {
     namespaceClient.delete(NamespaceId.DEFAULT);
   }
 
-  @Test
+//  @Test
   public void testProperties() throws Exception {
     // should fail because we haven't provided any metadata in the request
     addProperties(application, null, BadRequestException.class);

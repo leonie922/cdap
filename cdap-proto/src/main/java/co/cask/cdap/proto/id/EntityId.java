@@ -142,6 +142,47 @@ public abstract class EntityId {
     throw new UnsupportedOperationException("Metadata is not supported");
   }
 
+  public static <T extends EntityId> T fromMetadataEntity(MetadataEntity metadataEntity) {
+    EntityType targetType = findTargetType(metadataEntity);
+    if (targetType == null) {
+      throw new IllegalStateException(String.format("%s does not have known CDAP Entity types",
+                                                    metadataEntity.toString()));
+    }
+
+    if ((targetType == EntityType.APPLICATION || targetType == EntityType.PROGRAM) &&
+      metadataEntity.getValue(MetadataEntity.VERSION) == null) {
+      if (targetType == EntityType.APPLICATION) {
+        metadataEntity = metadataEntity.append(MetadataEntity.VERSION, ApplicationId.DEFAULT_VERSION);
+      } else {
+        metadataEntity = MetadataEntity.ofNamespace(metadataEntity.getValue(MetadataEntity.NAMESPACE))
+          .append(MetadataEntity.APPLICATION, metadataEntity.getValue(MetadataEntity.APPLICATION))
+          .append(MetadataEntity.VERSION, ApplicationId.DEFAULT_VERSION)
+          .append(MetadataEntity.TYPE, metadataEntity.getValue(MetadataEntity.TYPE))
+          .append(MetadataEntity.PROGRAM, metadataEntity.getValue(MetadataEntity.PROGRAM));
+      }
+    }
+
+    return targetType.fromIdParts(metadataEntity::getValues);
+  }
+
+  @Nullable
+  private static EntityType findTargetType(MetadataEntity metadataEntity) {
+    List<MetadataEntity.KeyValue> keyValues = metadataEntity.getKeyValues();
+
+    EntityType entityType = null;
+    // we want to identify the target type from child walking up to parent
+    int curIndex = keyValues.size() - 1;
+    while (curIndex >= 0) {
+      try {
+        entityType = EntityType.valueOf(keyValues.get(curIndex--).getKey().toUpperCase());
+        break;
+      } catch (IllegalArgumentException e) {
+        // ignore and walk up hierarchy
+      }
+    }
+    return entityType;
+  }
+
   public final EntityType getEntityType() {
     return entity;
   }

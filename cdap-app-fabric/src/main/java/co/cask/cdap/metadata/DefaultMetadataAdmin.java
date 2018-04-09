@@ -16,6 +16,7 @@
 
 package co.cask.cdap.metadata;
 
+import co.cask.cdap.api.metadata.MetadataEntity;
 import co.cask.cdap.api.metadata.MetadataScope;
 import co.cask.cdap.common.InvalidMetadataException;
 import co.cask.cdap.common.NotFoundException;
@@ -36,7 +37,6 @@ import co.cask.cdap.security.authorization.AuthorizationUtil;
 import co.cask.cdap.security.spi.authentication.AuthenticationContext;
 import co.cask.cdap.security.spi.authorization.AuthorizationEnforcer;
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -83,87 +83,86 @@ public class DefaultMetadataAdmin implements MetadataAdmin {
   }
 
   @Override
-  public void addProperties(NamespacedEntityId namespacedEntityId, Map<String, String> properties)
+  public void addProperties(MetadataEntity metadataEntity, Map<String, String> properties)
     throws NotFoundException, InvalidMetadataException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    validateProperties(namespacedEntityId, properties);
-    metadataStore.setProperties(MetadataScope.USER, namespacedEntityId, properties);
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    validateProperties(EntityId.fromMetadataEntity(metadataEntity), properties);
+    metadataStore.setProperties(MetadataScope.USER, metadataEntity, properties);
   }
 
   @Override
-  public void addTags(NamespacedEntityId namespacedEntityId, String... tags)
+  public void addTags(MetadataEntity metadataEntity, String... tags)
     throws NotFoundException, InvalidMetadataException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    validateTags(namespacedEntityId, tags);
-    metadataStore.addTags(MetadataScope.USER, namespacedEntityId, tags);
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    validateTags(EntityId.fromMetadataEntity(metadataEntity), tags);
+    metadataStore.addTags(MetadataScope.USER, metadataEntity, tags);
   }
 
   @Override
-  public Set<MetadataRecord> getMetadata(NamespacedEntityId namespacedEntityId) throws NotFoundException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    return metadataStore.getMetadata(namespacedEntityId);
+  public Set<MetadataRecord> getMetadata(MetadataEntity metadataEntity) throws NotFoundException {
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    return metadataStore.getMetadata(metadataEntity);
   }
 
   @Override
-  public Set<MetadataRecord> getMetadata(MetadataScope scope, NamespacedEntityId namespacedEntityId)
+  public Set<MetadataRecord> getMetadata(MetadataScope scope, MetadataEntity metadataEntity) throws NotFoundException {
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    return ImmutableSet.of(metadataStore.getMetadata(scope, metadataEntity));
+  }
+
+  @Override
+  public Map<String, String> getProperties(MetadataEntity metadataEntity) throws NotFoundException {
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    return metadataStore.getProperties(metadataEntity);
+  }
+
+  @Override
+  public Map<String, String> getProperties(MetadataScope scope, MetadataEntity metadataEntity)
     throws NotFoundException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    return ImmutableSet.of(metadataStore.getMetadata(scope, namespacedEntityId));
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    return metadataStore.getProperties(scope, metadataEntity);
   }
 
   @Override
-  public Map<String, String> getProperties(NamespacedEntityId namespacedEntityId) throws NotFoundException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    return metadataStore.getProperties(namespacedEntityId);
+  public Set<String> getTags(MetadataEntity metadataEntity) throws NotFoundException {
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    return metadataStore.getTags(metadataEntity);
   }
 
   @Override
-  public Map<String, String> getProperties(MetadataScope scope, NamespacedEntityId namespacedEntityId)
-    throws NotFoundException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    return metadataStore.getProperties(scope, namespacedEntityId);
+  public Set<String> getTags(MetadataScope scope, MetadataEntity metadataEntity) throws NotFoundException {
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    return metadataStore.getTags(scope, metadataEntity);
   }
 
   @Override
-  public Set<String> getTags(NamespacedEntityId namespacedEntityId) throws NotFoundException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    return metadataStore.getTags(namespacedEntityId);
+  public void removeMetadata(MetadataEntity metadataEntity) throws NotFoundException {
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    metadataStore.removeMetadata(MetadataScope.USER, metadataEntity);
   }
 
   @Override
-  public Set<String> getTags(MetadataScope scope, NamespacedEntityId namespacedEntityId) throws NotFoundException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    return metadataStore.getTags(scope, namespacedEntityId);
+  public void removeProperties(MetadataEntity metadataEntity) throws NotFoundException {
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    metadataStore.removeProperties(MetadataScope.USER, metadataEntity);
   }
 
   @Override
-  public void removeMetadata(NamespacedEntityId namespacedEntityId) throws NotFoundException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    metadataStore.removeMetadata(MetadataScope.USER, namespacedEntityId);
+  public void removeProperties(MetadataEntity metadataEntity, String... keys) throws NotFoundException {
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    metadataStore.removeProperties(MetadataScope.USER, metadataEntity, keys);
   }
 
   @Override
-  public void removeProperties(NamespacedEntityId namespacedEntityId) throws NotFoundException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    metadataStore.removeProperties(MetadataScope.USER, namespacedEntityId);
+  public void removeTags(MetadataEntity metadataEntity) throws NotFoundException {
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    metadataStore.removeTags(MetadataScope.USER, metadataEntity);
   }
 
   @Override
-  public void removeProperties(NamespacedEntityId namespacedEntityId, String... keys) throws NotFoundException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    metadataStore.removeProperties(MetadataScope.USER, namespacedEntityId, keys);
-  }
-
-  @Override
-  public void removeTags(NamespacedEntityId namespacedEntityId) throws NotFoundException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    metadataStore.removeTags(MetadataScope.USER, namespacedEntityId);
-  }
-
-  @Override
-  public void removeTags(NamespacedEntityId namespacedEntityId, String... tags) throws NotFoundException {
-    entityExistenceVerifier.ensureExists(namespacedEntityId);
-    metadataStore.removeTags(MetadataScope.USER, namespacedEntityId, tags);
+  public void removeTags(MetadataEntity metadataEntity, String... tags) throws NotFoundException {
+    entityExistenceVerifier.ensureExists(EntityId.fromMetadataEntity(metadataEntity));
+    metadataStore.removeTags(MetadataScope.USER, metadataEntity, tags);
   }
 
   @Override
@@ -191,12 +190,7 @@ public class DefaultMetadataAdmin implements MetadataAdmin {
       results.getSort(), results.getOffset(), results.getLimit(), results.getNumCursors(), results.getTotal(),
       ImmutableSet.copyOf(
         AuthorizationUtil.isVisible(results.getResults(), authorizationEnforcer, authenticationContext.getPrincipal(),
-                                    new Function<MetadataSearchResultRecord, EntityId>() {
-                                      @Override
-                                      public EntityId apply(MetadataSearchResultRecord input) {
-                                        return input.getEntityId();
-                                      }
-                                    }, null)),
+                                    MetadataSearchResultRecord::getEntityId, null)),
       results.getCursors(), results.isShowHidden(), results.getEntityScope());
   }
 
