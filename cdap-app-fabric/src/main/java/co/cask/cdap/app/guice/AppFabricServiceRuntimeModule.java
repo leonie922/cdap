@@ -35,7 +35,6 @@ import co.cask.cdap.data.stream.service.StreamFetchHandler;
 import co.cask.cdap.data.stream.service.StreamHandler;
 import co.cask.cdap.data2.datafabric.dataset.DatasetExecutorServiceManager;
 import co.cask.cdap.data2.datafabric.dataset.MetadataServiceManager;
-import co.cask.cdap.data2.datafabric.dataset.RemoteSystemOperationServiceManager;
 import co.cask.cdap.explore.service.ExploreServiceManager;
 import co.cask.cdap.gateway.handlers.AppLifecycleHttpHandler;
 import co.cask.cdap.gateway.handlers.ArtifactHttpHandler;
@@ -319,8 +318,6 @@ public final class AppFabricServiceRuntimeModule extends RuntimeModule {
                                  .to(DatasetExecutorServiceManager.class);
                                mapBinder.addBinding(Constants.Service.METADATA_SERVICE)
                                  .to(MetadataServiceManager.class);
-                               mapBinder.addBinding(Constants.Service.REMOTE_SYSTEM_OPERATION)
-                                 .to(RemoteSystemOperationServiceManager.class);
                                mapBinder.addBinding(Constants.Service.EXPLORE_HTTP_USER_SERVICE)
                                  .to(ExploreServiceManager.class);
                                mapBinder.addBinding(Constants.Service.MESSAGING_SERVICE)
